@@ -10,8 +10,10 @@ class AppConstants {
 
   static const String login = "/api/login";
   
-  static const String workShift = "/api/get-work-shift";
-  static const String jobSchedule = "/api/get-job-schedule";
+  static const String workShift = "/api/work-shift";
+  static const String jobSchedule = "/api/job-schedule";
   static const String countCheckedPoints = "/api/count-checked-points";
-  static const String jobStatus = "/api/get-job-status";
+  static const String jobStatus = "/api/job-status";
+  static const String saveInspectionResult = "/api/save-inspection-result";
+  static const String countCompletedSchedules = "/api/count-completed-schedules";
 }

@@ -9,6 +9,7 @@ import 'package:acs_check/routes/route_helper.dart';
 import 'package:acs_check/pages/job_schedule_page.dart';
 import 'package:acs_check/models/work_shift_model.dart';
 import 'package:acs_check/services/work_shift_service.dart';
+import 'package:acs_check/services/job_schedule_service.dart';
 
 class WorkShiftPage extends StatefulWidget {
   const WorkShiftPage({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class WorkShiftPage extends StatefulWidget {
 class _WorkShiftPageState extends State<WorkShiftPage> {
   final AuthService authService = AuthService();
   final WorkShiftService workShiftService = WorkShiftService();
+  final JobScheduleService jobScheduleService = JobScheduleService();
 
   int _currentIndex = 0;
 
@@ -31,6 +33,8 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
   String? lastLoginAt;
 
   bool isLoading = true;
+  int countCompletedSchedules = 0;
+  int completedSchedules  = 0;
 
   List<WorkShift>? workShifts;
   String? jobScheduleDate;
@@ -66,11 +70,30 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
       final formattedDate = currentDate.toIso8601String().split('T')[0];
       // print(formattedDate);
       final shifts = await workShiftService.fetchWorkShifts(userId!, formattedDate);
+      
       setState(() {
         workShifts = shifts;
         jobScheduleDate = formattedDate;
         isLoading = false;
       });
+
+      final completedData = await jobScheduleService.fetchCompletedSchedules(userId!, formattedDate);
+
+          
+      if (completedData != null) {
+        for (var item in completedData) {
+          int totalJobSchedules = int.parse(item['total_job_schedules'].toString());
+          int completedJobSchedules = int.parse(item['completed_job_schedules'].toString());
+          
+          if (totalJobSchedules == completedJobSchedules) {
+            countCompletedSchedules++;
+          }
+        }
+
+        setState(() {
+          completedSchedules = countCompletedSchedules;
+        });
+      }
     }
   }
 
@@ -158,9 +181,30 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
                 text: "มีทั้งหมด ${workShifts?.length ?? 0} รอบ",
                 size: Dimensions.font24),
             SizedBox(height: Dimensions.height20),
+            isLoading
+      ? CircularProgressIndicator() :
+      completedSchedules == workShifts?.length 
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: AppColors.successColor,
+                    size: Dimensions.font22,
+                  ),
+                  SizedBox(width: 8),
+                  BigText(
+                    text: "ตรวจครบแล้ว",
+                    size: Dimensions.font22,
+                    color: AppColors.successColor,
+                  ),
+                ],
+              )
+            :  
             SmallText(
-                text: "ตรวจไปแล้ว (0/${workShifts?.length ?? 0})",
-                size: Dimensions.font20),
+              text: "ตรวจไปแล้ว ($completedSchedules/${workShifts?.length ?? 0})",
+              size: Dimensions.font20
+            ),
             SizedBox(height: Dimensions.height20),
             Expanded(
               child: ListView.builder(

@@ -152,6 +152,33 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     });
   }
 
+  Future<void> _onConfirmInspection() async {
+    if (selectedJobStatusId != null && scannedCode.isNotEmpty) {
+      final arguments = Get.arguments as Map<String, dynamic>;
+      final int userId = arguments['userId'];
+      final String jobScheduleDate = arguments['jobScheduleDate'];
+      final int jobScheduleShiftId = arguments['jobScheduleShiftId'];
+
+      try {
+        await jobScheduleService.saveInspectionResult(
+          userId: userId,
+          jobScheduleDate: jobScheduleDate,
+          jobScheduleShiftId: jobScheduleShiftId, 
+          jobScheduleStatusId: selectedJobStatusId!,
+          locationQR: scannedCode, 
+          inspectionCompletedAt: DateTime.now(),
+          images: _images ?? [],
+        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ผลการตรวจสอบถูกบันทึกเรียบร้อยแล้ว')));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('พบข้อผิดพลาด โปรดลองใหม่อีกครั้งภายหลัง')));
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('กรุณาเลือกข้อมูลให้ครบถ้วน')));
+    }
+  }
+
+
   void _onTabChanged(int index) {
     setState(() {
       _currentIndex = index;
@@ -277,7 +304,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                     child: SmallText(
                         text: scannedCode.isEmpty
                             ? "สแกนจุดตรวจ"
-                            : "สแกนจุดตรวจใหม่",
+                            : "สแกนใหม่",
                         color: AppColors.whiteColor),
                   ),
                   SizedBox(height: Dimensions.height20),
@@ -403,12 +430,31 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                   isJobSchedulesLoading
                       ? CircularProgressIndicator()
                       : jobSchedules.isNotEmpty
-                          ? SmallText(
-                              text:
-                                  "ตรวจไปแล้ว (${countCheckedPoints}/${totalCheckpoint})",
-                              size: Dimensions.font20)
-                          : SmallText(
-                              text: "ไม่พบข้อมูล", size: Dimensions.font20),
+                          ? countCheckedPoints == totalCheckpoint
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.successColor,
+                                    size: Dimensions.font22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  BigText(
+                                    text: "ตรวจครบแล้ว",
+                                    size: Dimensions.font22,
+                                    color: AppColors.successColor,
+                                  ),
+                                ],
+                              )
+                            : SmallText(
+                                text: "ตรวจไปแล้ว (${countCheckedPoints}/${totalCheckpoint})",
+                                size: Dimensions.font20,
+                              )
+                        : SmallText(
+                            text: "ไม่พบข้อมูล",
+                            size: Dimensions.font20,
+                          ),
                   SizedBox(height: Dimensions.height10),
                   Expanded(
                     child: GridView.builder(
