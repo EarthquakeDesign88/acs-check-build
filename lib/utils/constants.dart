@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   static const Color mainColor = Color.fromARGB(255, 0, 78, 142);
+  static const Color mainLightColor = Color.fromARGB(255, 120, 164, 207);
   static const Color blackColor = Color(0xFF000000);
   static const Color darkGreyColor = Color(0xFF757575);
   static const Color greyColor = Color(0xFF979797);
   static const Color whiteColor = Color(0xFFFFFFFF);
   static const Color successColor = Colors.green;
   static const Color errorColor = Colors.red;
-
-
 }
 
 class Dimensions {

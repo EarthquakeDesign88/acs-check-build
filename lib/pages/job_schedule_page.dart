@@ -24,7 +24,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   final JobScheduleService jobScheduleService = JobScheduleService();
   final ImagePicker _picker = ImagePicker();
 
-  String scannedCode = 'อาตาร C_2_QR';
+  String scannedCode = '';
 
   int _currentIndex = 0;
 

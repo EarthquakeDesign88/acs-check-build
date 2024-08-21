@@ -10,6 +10,7 @@ import 'package:acs_check/pages/job_schedule_page.dart';
 import 'package:acs_check/models/work_shift_model.dart';
 import 'package:acs_check/services/work_shift_service.dart';
 import 'package:acs_check/services/job_schedule_service.dart';
+import 'package:intl/intl.dart';
 
 class WorkShiftPage extends StatefulWidget {
   const WorkShiftPage({Key? key}) : super(key: key);
@@ -34,7 +35,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
 
   bool isLoading = true;
   int countCompletedSchedules = 0;
-  int completedSchedules  = 0;
+  int completedSchedules = 0;
 
   List<WorkShift>? workShifts;
   String? jobScheduleDate;
@@ -69,21 +70,25 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
       final currentDate = DateTime.now();
       final formattedDate = currentDate.toIso8601String().split('T')[0];
       // print(formattedDate);
-      final shifts = await workShiftService.fetchWorkShifts(userId!, formattedDate);
-      
+      final shifts =
+          await workShiftService.fetchWorkShifts(userId!, formattedDate);
+
       setState(() {
         workShifts = shifts;
         jobScheduleDate = formattedDate;
         isLoading = false;
       });
 
-      final completedData = await jobScheduleService.fetchCompletedSchedules(userId!, formattedDate);
+      final completedData = await jobScheduleService.fetchCompletedSchedules(
+          userId!, formattedDate);
 
       if (completedData != null) {
         for (var item in completedData) {
-          int totalJobSchedules = int.parse(item['total_job_schedules'].toString());
-          int completedJobSchedules = int.parse(item['completed_job_schedules'].toString());
-          
+          int totalJobSchedules =
+              int.parse(item['total_job_schedules'].toString());
+          int completedJobSchedules =
+              int.parse(item['completed_job_schedules'].toString());
+
           if (totalJobSchedules == completedJobSchedules) {
             countCompletedSchedules++;
           }
@@ -104,7 +109,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
         'jobScheduleDate': jobScheduleDate,
         'jobScheduleShiftId': shiftId,
       },
-      preventDuplicates: false, 
+      preventDuplicates: false,
     );
   }
 
@@ -169,86 +174,84 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
         ),
       ),
       body: isLoading
-    ? Center(child: CircularProgressIndicator())
-    : Column(
-        children: [
-          if (workShifts != null && workShifts!.isNotEmpty) ...[
-            SizedBox(height: Dimensions.height20),
-            BigText(text: "ตารางงานวันนี้", size: Dimensions.font30),
-            SizedBox(height: Dimensions.height20),
-            BigText(
-                text: "มีทั้งหมด ${workShifts?.length ?? 0} รอบ",
-                size: Dimensions.font24),
-            SizedBox(height: Dimensions.height20),
-            isLoading
-      ? CircularProgressIndicator() :
-      completedSchedules == workShifts?.length 
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: AppColors.successColor,
-                    size: Dimensions.font22,
-                  ),
-                  SizedBox(width: 8),
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                if (workShifts != null && workShifts!.isNotEmpty) ...[
+                  SizedBox(height: Dimensions.height20),
+                  BigText(text: "ตารางงานวันนี้", size: Dimensions.font30),
+                  SizedBox(height: Dimensions.height20),
                   BigText(
-                    text: "ตรวจครบแล้ว",
-                    size: Dimensions.font22,
-                    color: AppColors.successColor,
+                      text: "มีทั้งหมด ${workShifts?.length ?? 0} รอบ",
+                      size: Dimensions.font24),
+                  SizedBox(height: Dimensions.height20),
+                  isLoading
+                      ? CircularProgressIndicator()
+                      : completedSchedules == workShifts?.length
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  color: AppColors.successColor,
+                                  size: Dimensions.font22,
+                                ),
+                                SizedBox(width: 8),
+                                BigText(
+                                  text: "ตรวจครบแล้ว",
+                                  size: Dimensions.font22,
+                                  color: AppColors.successColor,
+                                ),
+                              ],
+                            )
+                          : SmallText(
+                              text:
+                                  "ตรวจไปแล้ว ($completedSchedules/${workShifts?.length ?? 0})",
+                              size: Dimensions.font20),
+                  SizedBox(height: Dimensions.height20),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: workShifts?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final workShift = workShifts![index];
+                        return _buildTimeSlotTile(
+                          context,
+                          workShift.shiftTimeSlot,
+                          workShift.jobScheduleShiftId
+                        );
+                      },
+                    ),
                   ),
                 ],
-              )
-            :  
-            SmallText(
-              text: "ตรวจไปแล้ว ($completedSchedules/${workShifts?.length ?? 0})",
-              size: Dimensions.font20
-            ),
-            SizedBox(height: Dimensions.height20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: workShifts?.length ?? 0,
-                itemBuilder: (context, index) {
-                  final workShift = workShifts![index];
-                  return _buildTimeSlotTile(
-                    context,
-                    workShift.shiftTimeSlot,
-                    AppColors.mainColor,
-                    workShift.jobScheduleShiftId
-                  );
-                },
-              ),
-            ),
-          ],
-          if (workShifts == null || workShifts!.isEmpty)
-            Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/no_schedule.png',
-                      height: 200.0,
-                      width: 200.0,
+                if (workShifts == null || workShifts!.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/no_schedule.png',
+                            height: 200.0,
+                            width: 200.0,
+                          ),
+                          SizedBox(height: Dimensions.height20),
+                          BigText(
+                            text: "ไม่มีตารางงานวันนี้",
+                            size: Dimensions.font30,
+                          ),
+                          SizedBox(height: Dimensions.height10),
+                          SmallText(
+                            text:
+                                "คุณไม่มีตารางงานสำหรับวันนี้ โปรดตรวจสอบอีกครั้งภายหลัง",
+                            size: Dimensions.font20,
+                          ),
+                        ],
+                      ),
                     ),
-                    SizedBox(height: Dimensions.height20),
-                    BigText(
-                      text: "ไม่มีตารางงานวันนี้",
-                      size: Dimensions.font30,
-                    ),
-                    SizedBox(height: Dimensions.height10),
-                    SmallText(
-                      text:
-                          "คุณไม่มีตารางงานสำหรับวันนี้ โปรดตรวจสอบอีกครั้งภายหลัง",
-                      size: Dimensions.font20,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
             ),
-        ],
-      ),
       bottomNavigationBar: BottomNavbar(
         currentIndex: 0,
         onTabChanged: (index) {},
@@ -260,24 +263,39 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
     return CircularProgressIndicator();
   }
 
-  Widget _buildTimeSlotTile(
-      BuildContext context, String timeSlot, Color color, int shiftId) {
+  Widget _buildTimeSlotTile(BuildContext context, String timeSlot, int shiftId) {
+    final timeRange = timeSlot.split('-');
+    final startTime = timeRange[0].trim();
+    final endTime = timeRange[1].trim();
+
+    final currentDate = DateTime.now();
+    final DateFormat formatter = DateFormat('HH.mm');
+    final startDateTime = DateFormat('HH.mm').parse(startTime);
+    final endDateTime = DateFormat('HH.mm').parse(endTime);
+
+    final bool isCurrentTimeInRange =
+        formatter.format(currentDate).compareTo(startTime) >= 0 &&
+            formatter.format(currentDate).compareTo(endTime) <= 0;
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       decoration: BoxDecoration(
-        color: color,
+        color: isCurrentTimeInRange ? AppColors.mainColor : AppColors.mainLightColor,
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: ListTile(
-        contentPadding: EdgeInsets.all(16.0),
-        title: Center(
-          child: Text(
-            timeSlot,
-            style: TextStyle(fontSize: Dimensions.font18, color: Colors.white),
+          contentPadding: EdgeInsets.all(16.0),
+          title: Center(
+            child: Text(
+              timeSlot,
+              style:
+                  TextStyle(fontSize: Dimensions.font18, color: Colors.white),
+            ),
           ),
-        ),
-        onTap: () => _navigateToJobSchedulePage(context, shiftId)
-      ),
+          onTap: isCurrentTimeInRange
+          ? () => _navigateToJobSchedulePage(context, shiftId)
+          : null
+      )
     );
   }
 }
