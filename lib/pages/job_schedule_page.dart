@@ -515,8 +515,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                         JobSchedule jobSchedule = jobSchedules[index];
 
                         Color checkpointColor =
-                            jobSchedule.jobStatusDescription ==
-                                    'ยังไม่ได้ตรวจสอบ'
+                            jobSchedule.jobScheduleStatusId == 3
                                 ? AppColors.mainColor.withOpacity(0.1)
                                 : AppColors.successColor.withOpacity(0.6);
 
