@@ -79,7 +79,6 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
 
       final completedData = await jobScheduleService.fetchCompletedSchedules(userId!, formattedDate);
 
-          
       if (completedData != null) {
         for (var item in completedData) {
           int totalJobSchedules = int.parse(item['total_job_schedules'].toString());

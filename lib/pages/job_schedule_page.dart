@@ -24,7 +24,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   final JobScheduleService jobScheduleService = JobScheduleService();
   final ImagePicker _picker = ImagePicker();
 
-  String scannedCode = '';
+  String scannedCode = 'อาตาร C_2_QR';
 
   int _currentIndex = 0;
 
@@ -153,14 +153,35 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   }
 
   Future<void> _onConfirmInspection() async {
-    if (selectedJobStatusId != null && scannedCode.isNotEmpty) {
-      final arguments = Get.arguments as Map<String, dynamic>;
-      final int userId = arguments['userId'];
-      final String jobScheduleDate = arguments['jobScheduleDate'];
-      final int jobScheduleShiftId = arguments['jobScheduleShiftId'];
+    final arguments = Get.arguments as Map<String, dynamic>;
+    final int userId = arguments['userId'];
+    final String jobScheduleDate = arguments['jobScheduleDate'];
+    final int jobScheduleShiftId = arguments['jobScheduleShiftId'];
+
+    bool saveSuccess = true; 
+    
+    if (selectedJobStatusId == 2 && (_images == null || _images!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('กรุณาถ่ายหรืออัพโหลดรูปภาพปัญหา'),
+          backgroundColor: AppColors.errorColor,
+        ),
+      );
+      return;
+    }
+
+    if (_images != null && _images!.length > 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ไม่สามารถอัปโหลดรูปภาพได้เกิน 3 รูป'),
+          backgroundColor: AppColors.errorColor,
+        ),
+      );
+      return;
+    }
 
       try {
-        await jobScheduleService.saveInspectionResult(
+        final response = await jobScheduleService.saveInspectionResult(
           userId: userId,
           jobScheduleDate: jobScheduleDate,
           jobScheduleShiftId: jobScheduleShiftId, 
@@ -169,13 +190,39 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
           inspectionCompletedAt: DateTime.now(),
           images: _images ?? [],
         );
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ผลการตรวจสอบถูกบันทึกเรียบร้อยแล้ว')));
+
+        if(response['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+              backgroundColor: AppColors.successColor
+            ),
+          );
+
+          setState(() {
+            saveSuccess = true;
+            scannedCode = '';
+            selectedJobStatusId = null;
+            _images = [];
+          });
+          
+        }
+        else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+              backgroundColor: AppColors.errorColor
+            ),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('พบข้อผิดพลาด โปรดลองใหม่อีกครั้งภายหลัง')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('พบข้อผิดพลาด โปรดลองใหม่อีกครั้งภายหลัง'),
+            backgroundColor: AppColors.errorColor
+          )
+        );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('กรุณาเลือกข้อมูลให้ครบถ้วน')));
-    }
   }
 
 
@@ -259,8 +306,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                 ),
                                 SizedBox(height: Dimensions.height20),
                                 SmallText(
-                                  text: "ช่วงเวลาตั้งแต่ " +
-                                      jobSchedules[0].shiftTimeSlot,
+                                  text: "ช่วงเวลาตั้งแต่ " + jobSchedules[0].shiftTimeSlot,
                                   size: Dimensions.font28,
                                 ),
                               ],
@@ -279,7 +325,9 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                               ],
                             ),
                   SizedBox(height: Dimensions.height20),
-                  ElevatedButton(
+                  Visibility(
+                    visible:  countCheckedPoints != totalCheckpoint,
+                    child: ElevatedButton(
                     onPressed: () async {
                       var res = await Navigator.push(
                           context,
@@ -307,6 +355,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                             : "สแกนใหม่",
                         color: AppColors.whiteColor),
                   ),
+                  ),
                   SizedBox(height: Dimensions.height20),
                   Visibility(
                     visible: scannedCode.isNotEmpty,
@@ -321,19 +370,15 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: jobStatuses.map((status) {
-                            bool isActive =
-                                selectedJobStatusId == status['job_status_id'];
-                            bool isNoProblem =
-                                status['job_status_description'] ==
-                                    'ไม่พบปัญหา';
+                            bool isActive = selectedJobStatusId == status['job_status_id'];
+                            bool isNoProblem = status['job_status_description'] == 'ไม่พบปัญหา';
                             return Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
                               child: ElevatedButton(
                                 onPressed: () {
                                   setState(() {
-                                    selectedJobStatusId =
-                                        status['job_status_id'];
+                                    selectedJobStatusId = status['job_status_id'];
                                     if (selectedJobStatusId == 1) {
                                       _images = [];
                                     }
@@ -381,7 +426,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                         Visibility(
                           visible: selectedJobStatusId != null,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () => _onConfirmInspection(),
                             style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.mainColor,
                                 elevation: 3,
@@ -390,9 +435,10 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                   borderRadius: BorderRadius.circular(8.0),
                                 )),
                             child: SmallText(
-                                text: "ยืนยันการตรวจสอบ",
-                                size: Dimensions.font20,
-                                color: AppColors.whiteColor),
+                              text: "ยืนยันการตรวจสอบ",
+                              size: Dimensions.font20,
+                              color: AppColors.whiteColor
+                            ),
                           ),
                         ),
                         SizedBox(height: Dimensions.height20),
@@ -417,8 +463,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                   ),
                                 );
                               },
-                              shrinkWrap:
-                                  true, // Prevent GridView from expanding infinitely
+                              shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(), 
                             ),
                           ),
