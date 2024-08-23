@@ -153,7 +153,8 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
       return;
     }
 
-    final image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 100);
+    final image =
+        await _picker.pickImage(source: ImageSource.camera, imageQuality: 100);
     if (image != null) {
       setState(() {
         _images?.add(image);
@@ -165,6 +166,70 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     setState(() {
       _images!.removeAt(index);
     });
+  }
+
+  void _showFullImage(BuildContext context, XFile imageFile) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Stack(
+          children: [
+            Image.file(File(imageFile.path), fit: BoxFit.contain),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: AppColors.greyColor),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(XFile imageFile, int index) {
+    return GestureDetector(
+      onTap: () => _showFullImage(context, imageFile),
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(8.0),
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+              image: DecorationImage(
+                image: FileImage(File(imageFile.path)),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              icon: Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.errorColor,
+                  shape: BoxShape.circle,
+                ),
+                padding: EdgeInsets.all(4),
+                child: const Icon(
+                  Icons.close,
+                  color: AppColors.whiteColor,
+                  size: 20,
+                ),
+              ),
+              onPressed: () {
+                _removeImage(index);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _onConfirmInspection() async {
@@ -324,7 +389,8 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                               ),
                               SizedBox(height: Dimensions.height20),
                               SmallText(
-                                text: "ช่วงเวลาตั้งแต่ " + jobSchedules[0].shiftTimeSlot,
+                                text: "ช่วงเวลาตั้งแต่ " +
+                                    jobSchedules[0].shiftTimeSlot,
                                 size: Dimensions.font28,
                               ),
                             ],
@@ -477,12 +543,20 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                 ),
                                 itemCount: _images!.length,
                                 itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Image.file(
-                                      File(_images![index].path),
-                                      fit: BoxFit.cover,
-                                    ),
+                                  return Stack(
+                                    children: [
+                                      Wrap(
+                                        children: _images!
+                                            .asMap()
+                                            .entries
+                                            .map((entry) {
+                                          int index = entry.key;
+                                          XFile imageFile = entry.value;
+                                          return _buildImagePreview(
+                                              imageFile, index);
+                                        }).toList(),
+                                      ),
+                                    ],
                                   );
                                 },
                                 shrinkWrap: true,
@@ -495,6 +569,36 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                     ],
                   ),
                 ),
+                SizedBox(height: Dimensions.height10),
+                isJobSchedulesLoading
+                    ? CircularProgressIndicator()
+                    : jobSchedules.isNotEmpty
+                        ? countCheckedPoints == totalCheckpoint
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.successColor,
+                                    size: Dimensions.font22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  BigText(
+                                    text: "ตรวจครบแล้ว",
+                                    size: Dimensions.font22,
+                                    color: AppColors.successColor,
+                                  ),
+                                ],
+                              )
+                            : SmallText(
+                                text:
+                                    "ตรวจไปแล้ว (${countCheckedPoints}/${totalCheckpoint})",
+                                size: Dimensions.font20,
+                              )
+                        : SmallText(
+                            text: "ไม่พบข้อมูล",
+                            size: Dimensions.font20,
+                          ),
                 SizedBox(height: Dimensions.height10),
               ],
             ),
