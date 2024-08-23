@@ -162,6 +162,18 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
                   text: "$firstName $lastName", size: Dimensions.font18),
             ),
             ListTile(
+              title: SmallText(text: "ตารางงาน", size: Dimensions.font18),
+              onTap: () {
+                Get.toNamed(RouteHelper.workSchedule);
+              },
+            ),
+            ListTile(
+              title: SmallText(text: "ประวัติสแกน", size: Dimensions.font18),
+              onTap: () {
+                Get.toNamed(RouteHelper.timeSlotDetail);
+              },
+            ),
+            ListTile(
               title: SmallText(text: "Logout", size: Dimensions.font18),
               onTap: () async {
                 await authService.logout();
@@ -242,10 +254,15 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
                           ),
                           SizedBox(height: Dimensions.height10),
                           SmallText(
-                            text:
-                                "คุณไม่มีตารางงานสำหรับวันนี้ โปรดตรวจสอบอีกครั้งภายหลัง",
+                            text: "คุณไม่มีตารางงานสำหรับวันนี้",
                             size: Dimensions.font20,
                           ),
+                          SizedBox(height: Dimensions.height10),
+                          SmallText(
+                            text: "โปรดตรวจสอบอีกครั้งภายหลัง",
+                            size: Dimensions.font20,
+                          ),
+
                         ],
                       ),
                     ),
