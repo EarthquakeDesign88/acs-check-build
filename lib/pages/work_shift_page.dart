@@ -70,8 +70,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
       final currentDate = DateTime.now();
       final formattedDate = currentDate.toIso8601String().split('T')[0];
       // print(formattedDate);
-      final shifts =
-          await workShiftService.fetchWorkShifts(userId!, formattedDate);
+      final shifts = await workShiftService.fetchWorkShifts(userId!, formattedDate);
 
       setState(() {
         workShifts = shifts;
@@ -217,8 +216,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
                               ],
                             )
                           : SmallText(
-                              text:
-                                  "ตรวจไปแล้ว ($completedSchedules/${workShifts?.length ?? 0})",
+                              text: "ตรวจไปแล้ว ($completedSchedules/${workShifts?.length ?? 0})",
                               size: Dimensions.font20),
                   SizedBox(height: Dimensions.height20),
                   Expanded(
@@ -305,8 +303,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
           title: Center(
             child: Text(
               timeSlot,
-              style:
-                  TextStyle(fontSize: Dimensions.font18, color: Colors.white),
+              style: TextStyle(fontSize: Dimensions.font18, color: Colors.white),
             ),
           ),
           onTap: isCurrentTimeInRange

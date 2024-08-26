@@ -1,0 +1,34 @@
+class Location {
+  final int jobScheduleId;
+  final int locationId;
+  final String locationDescription;
+  final String locationQr;
+  final String zoneDescription;
+  final int jobStatusId;
+  final String jobStatusDescription;
+  final String inspectionCompletedAt;
+
+  Location({
+    required this.jobScheduleId,
+    required this.locationId,
+    required this.locationDescription,
+    required this.locationQr,
+    required this.zoneDescription,
+    required this.jobStatusId,
+    required this.jobStatusDescription,
+    required this.inspectionCompletedAt,
+  });
+
+  factory Location.fromJson(Map<String, dynamic> json) {
+    return Location(
+      jobScheduleId: json['job_schedule_id'] ?? '',
+      locationId: json['location_id'] ?? '',
+      locationDescription: json['location_description'] ?? '',
+      locationQr: json['location_qr'] ?? '',
+      zoneDescription: json['zone_description'] ?? '',
+      jobStatusId: json['job_status_id'] ?? '',
+      jobStatusDescription: json['job_status_description'] ?? '',
+      inspectionCompletedAt: json['inspection_completed_at'] ?? '',
+    );
+  }
+}

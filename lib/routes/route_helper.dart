@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:acs_check/pages/auth/login_page.dart';
 import 'package:acs_check/pages/work_shift_page.dart';
 import 'package:acs_check/pages/job_schedule_page.dart';
+import 'package:acs_check/pages/location_details_page.dart';
 
 class RouteHelper {
   static String initial = "/";

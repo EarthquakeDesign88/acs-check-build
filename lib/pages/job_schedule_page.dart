@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:acs_check/pages/location_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:acs_check/utils/constants.dart';
 import 'package:acs_check/widgets/bottom_navbar.dart';
@@ -11,6 +12,7 @@ import 'package:acs_check/routes/route_helper.dart';
 import 'package:acs_check/models/job_schedule_model.dart';
 import 'package:acs_check/services/job_schedule_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:acs_check/pages/location_details_page.dart';
 
 class JobSchedulePage extends StatefulWidget {
   const JobSchedulePage({Key? key}) : super(key: key);
@@ -24,7 +26,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   final JobScheduleService jobScheduleService = JobScheduleService();
   final ImagePicker _picker = ImagePicker();
 
-  String scannedCode = '3A_19_QR';
+  String scannedCode = '';
 
   int _currentIndex = 0;
 
@@ -300,6 +302,19 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     }
   }
 
+  void _navigateToLocationDetailsPage(BuildContext context, int jobAuthorityId,
+      String jobScheduleDate, int jobScheduleShiftId) {
+    Get.to(
+      () => LocationDetailsPage(),
+      arguments: {
+        'jobAuthorityId': jobAuthorityId,
+        'jobScheduleDate': jobScheduleDate,
+        'jobScheduleShiftId': jobScheduleShiftId,
+      },
+      preventDuplicates: false,
+    );
+  }
+
   void _onTabChanged(int index) {
     setState(() {
       _currentIndex = index;
@@ -316,6 +331,12 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
         ),
         backgroundColor: AppColors.mainColor,
         iconTheme: IconThemeData(color: AppColors.whiteColor),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: AppColors.whiteColor),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -603,39 +624,52 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
               ],
             ),
           ),
-          SliverGrid(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                JobSchedule jobSchedule = jobSchedules[index];
-                Color checkpointColor = jobSchedule.jobScheduleStatusId == 3
-                    ? AppColors.mainColor.withOpacity(0.1)
-                    : AppColors.successColor.withOpacity(0.6);
-                return Container(
-                  decoration: BoxDecoration(
-                    color: checkpointColor,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(
-                      color: checkpointColor,
-                      width: 2.0,
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0), 
+            sliver: SliverGrid(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  JobSchedule jobSchedule = jobSchedules[index];
+                  Color checkpointColor = jobSchedule.jobScheduleStatusId == 3
+                      ? AppColors.mainColor.withOpacity(0.1)
+                      : AppColors.successColor.withOpacity(0.6);
+                  return GestureDetector(
+                    onTap: () {
+                      _navigateToLocationDetailsPage(
+                        context,
+                        jobSchedule.jobAuthorityId,
+                        jobSchedule.jobScheduleDate,
+                        jobSchedule.jobScheduleShiftId,
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: checkpointColor,
+                        borderRadius: BorderRadius.circular(8.0),
+                        border: Border.all(
+                          color: checkpointColor,
+                          width: 2.0,
+                        ),
+                      ),
+                      child: Center(
+                        child: BigText(
+                          text: '${index + 1}',
+                          size: Dimensions.font18,
+                          color: AppColors.blackColor,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: BigText(
-                      text: '${index + 1}',
-                      size: Dimensions.font18,
-                      color: AppColors.blackColor,
-                    ),
-                  ),
-                );
-              },
-              childCount: totalCheckpoint,
+                  );
+                },
+                childCount: totalCheckpoint,
+              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 8.0,
+                mainAxisSpacing: 8.0,
+              ),
             ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5,
-              crossAxisSpacing: 8.0,
-              mainAxisSpacing: 8.0,
-            ),
-          ),
+          )
         ],
       ),
       bottomNavigationBar: BottomNavbar(
