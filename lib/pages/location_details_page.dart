@@ -1,4 +1,3 @@
-import 'package:acs_check/services/location_service.dart';
 import 'package:acs_check/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:acs_check/utils/constants.dart';
@@ -12,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:acs_check/services/location_service.dart';
 import 'package:acs_check/models/location_model.dart';
 import 'package:acs_check/services/job_schedule_service.dart';
+import 'package:acs_check/services/location_service.dart';
 
 class LocationDetailsPage extends StatefulWidget {
   const LocationDetailsPage({Key? key}) : super(key: key);

@@ -26,7 +26,9 @@ class _BottomNavbarState extends State<BottomNavbar> {
         if (index == 0) {
           Get.offNamed(RouteHelper.workSchedule);
         } 
-      
+        else {
+          Get.offNamed(RouteHelper.historyJob);
+        }
       },
       type: BottomNavigationBarType.fixed,
       selectedItemColor: AppColors.mainColor,
@@ -39,7 +41,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.history),
-          label: 'ประวัติสแกน',
+          label: 'ประวัติตรวจงาน',
         ),
       ],
     );
