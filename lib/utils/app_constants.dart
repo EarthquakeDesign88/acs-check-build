@@ -17,6 +17,7 @@ class AppConstants {
   static const String saveInspectionResult = "/api/save-inspection-result";
   static const String countCompletedSchedules = "/api/count-completed-schedules";
   static const String fetchLocationDetails = "/api/location-details";
+  static const String fetchImagesJob = "/api/images-job";
 
 
 }

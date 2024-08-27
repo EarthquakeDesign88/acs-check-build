@@ -158,4 +158,27 @@ class JobScheduleService {
     }
     return null;
   }
+
+  Future<List<dynamic>?> fetchImagesJob(int jobScheduleId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.fetchImagesJob}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'job_schedule_id': jobScheduleId}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+
+        return responseData;
+      } else {
+        print('Failed to load images job');
+      }
+    } catch (e) {
+      print('Error during API call: $e');
+    }
+    return null;
+  }
+
+
 }

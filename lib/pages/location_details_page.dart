@@ -1,4 +1,5 @@
 import 'package:acs_check/services/location_service.dart';
+import 'package:acs_check/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:acs_check/utils/constants.dart';
 import 'package:acs_check/widgets/bottom_navbar.dart';
@@ -10,6 +11,7 @@ import 'package:acs_check/routes/route_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:acs_check/services/location_service.dart';
 import 'package:acs_check/models/location_model.dart';
+import 'package:acs_check/services/job_schedule_service.dart';
 
 class LocationDetailsPage extends StatefulWidget {
   const LocationDetailsPage({Key? key}) : super(key: key);
@@ -21,19 +23,19 @@ class LocationDetailsPage extends StatefulWidget {
 class _LocationDetailsPageState extends State<LocationDetailsPage> {
   final AuthService authService = AuthService();
   final LocationService locationService = LocationService();
+  final JobScheduleService jobImageService = JobScheduleService();
 
   int _currentIndex = 0;
 
   int? userId;
-  String? username;
   String? firstName;
   String? lastName;
-  String? roleName;
-  String? lastLoginAt;
 
   bool isLoading = false;
+  bool showImages = false;
 
   List<Location> locationDetails = [];
+  List<Map<String, dynamic>> images = [];
 
   Widget _buildLoading() {
     return CircularProgressIndicator();
@@ -48,19 +50,13 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
 
   void _loadUserData() async {
     final storedUserId = await authService.getUserId();
-    final storedUsername = await authService.getUsername();
     final storedFirstName = await authService.getFirstName();
     final storedLastName = await authService.getLastName();
-    final storedRoleName = await authService.getRoleName();
-    final storedLastLoginAt = await authService.getLastLoginAt();
 
     setState(() {
       userId = storedUserId;
-      username = storedUsername;
       firstName = storedFirstName;
       lastName = storedLastName;
-      roleName = storedRoleName;
-      lastLoginAt = storedLastLoginAt;
     });
   }
 
@@ -79,6 +75,19 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
 
     setState(() {
       locationDetails = fetchedLocationDetails ?? [];
+      isLoading = false;
+    });
+  }
+
+  Future<void> _fetchImagesAndShowDialog(int jobScheduleId) async {
+    // setState(() {
+    //   isLoading = true;
+    // });
+
+    final fetchedImages = await jobImageService.fetchImagesJob(jobScheduleId);
+
+    setState(() {
+      images = List<Map<String, dynamic>>.from(fetchedImages ?? []);
       isLoading = false;
     });
   }
@@ -185,7 +194,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                           AppColors.greyColor,
                         ),
                         _buildDetailRow(
-                          'บริเวณ:',
+                          'จุดตรวจ:',
                           location.locationDescription,
                           AppColors.greyColor,
                         ),
@@ -195,20 +204,73 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                               ? "ตรวจสอบแล้ว"
                               : "ยังไม่ได้ตรวจสอบ",
                           location.jobStatusId != 3
-                              ? AppColors.successColor
+                              ? AppColors.greyColor
                               : AppColors.errorColor,
                         ),
                         if (location.jobStatusId != 3)
                           _buildDetailRow(
                             'รายละเอียดสถานะ:',
                             location.jobStatusDescription,
-                            AppColors.greyColor,
+                            location.jobStatusId == 1
+                                ? AppColors.successColor
+                                : AppColors.errorColor,
                           ),
-                           _buildDetailRow(
-                            'ตรวจสอบเวลา:',
-                            location.inspectionCompletedAt,
-                            AppColors.greyColor,
-                          ),                  
+                        _buildDetailRow(
+                          'ตรวจสอบเวลา:',
+                          location.inspectionCompletedAt,
+                          AppColors.greyColor,
+                        ),
+                        if (location.jobStatusId == 2) ...[
+                          SizedBox(height: Dimensions.height10),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await _fetchImagesAndShowDialog(location.jobScheduleId);
+
+                              setState(() {
+                                showImages = !showImages;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.mainColor,
+                              elevation: 3,
+                              padding: const EdgeInsets.all(16.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            child: SmallText(
+                              text: showImages ? "ปิด" : "ดูรูปภาพปัญหา",
+                              size: Dimensions.font18,
+                              color: AppColors.whiteColor,
+                            ),
+                          ),
+                          SizedBox(height: Dimensions.height10),
+                        ],
+                        Visibility(
+                          visible: showImages,
+                          child: Column(
+                            children: [
+                              if (images.isNotEmpty)
+                                ...images.map((image) {
+                                  String imagePath = image['image_path'];
+                                  if (!imagePath.startsWith('http')) {
+                                    imagePath = '${AppConstants.baseUrl}/storage/$imagePath';
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    child: Image.network(imagePath),
+                                  );
+                                }).toList()
+                              else
+                                SmallText(
+                                  text: "ไม่มีรูปภาพ",
+                                  size: Dimensions.font16,
+                                  color: AppColors.greyColor,
+                                ),
+                            ],
+                          ),
+                        ),
                       ],
                     ));
               },

@@ -27,11 +27,8 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
   int _currentIndex = 0;
 
   int? userId;
-  String? username;
   String? firstName;
   String? lastName;
-  String? roleName;
-  String? lastLoginAt;
 
   bool isLoading = true;
   int countCompletedSchedules = 0;
@@ -48,19 +45,13 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
 
   void _loadUserData() async {
     final storedUserId = await authService.getUserId();
-    final storedUsername = await authService.getUsername();
     final storedFirstName = await authService.getFirstName();
     final storedLastName = await authService.getLastName();
-    final storedRoleName = await authService.getRoleName();
-    final storedLastLoginAt = await authService.getLastLoginAt();
 
     setState(() {
       userId = storedUserId;
-      username = storedUsername;
       firstName = storedFirstName;
       lastName = storedLastName;
-      roleName = storedRoleName;
-      lastLoginAt = storedLastLoginAt;
     });
     _fetchWorkShifts();
   }

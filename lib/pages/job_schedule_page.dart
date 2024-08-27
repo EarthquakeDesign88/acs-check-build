@@ -31,11 +31,8 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   int _currentIndex = 0;
 
   int? userId;
-  String? username;
   String? firstName;
   String? lastName;
-  String? roleName;
-  String? lastLoginAt;
 
   bool isLoading = false;
   bool isJobSchedulesLoading = false;
@@ -63,20 +60,12 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   }
 
   void _loadUserData() async {
-    final storedUserId = await authService.getUserId();
-    final storedUsername = await authService.getUsername();
     final storedFirstName = await authService.getFirstName();
     final storedLastName = await authService.getLastName();
-    final storedRoleName = await authService.getRoleName();
-    final storedLastLoginAt = await authService.getLastLoginAt();
 
     setState(() {
-      userId = storedUserId;
-      username = storedUsername;
       firstName = storedFirstName;
       lastName = storedLastName;
-      roleName = storedRoleName;
-      lastLoginAt = storedLastLoginAt;
     });
   }
 
@@ -393,44 +382,27 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
           ],
         ),
       ),
-      body: CustomScrollView(
+      body: isJobSchedulesLoading
+          ? Center(child: CircularProgressIndicator()) : CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Column(
               children: [
                 SizedBox(height: Dimensions.height20),
-                isJobSchedulesLoading
-                    ? CircularProgressIndicator()
-                    : jobSchedules.isNotEmpty
-                        ? Column(
-                            children: [
-                              BigText(
-                                text: jobSchedules[0].workShiftDescription,
-                                size: Dimensions.font34,
-                              ),
-                              SizedBox(height: Dimensions.height20),
-                              SmallText(
-                                text: "ช่วงเวลาตั้งแต่ " +
-                                    jobSchedules[0].shiftTimeSlot,
-                                size: Dimensions.font28,
-                              ),
-                            ],
-                          )
-                        : Center(
-                            child: Column(
-                              children: [
-                                BigText(
-                                  text: 'ไม่พบข้อมูล',
-                                  size: Dimensions.font30,
-                                ),
-                                SizedBox(height: Dimensions.height20),
-                                SmallText(
-                                  text: 'ไม่พบข้อมูล',
-                                  size: Dimensions.font30,
-                                ),
-                              ],
-                            ),
-                          ),
+                Column(
+                  children: [
+                    BigText(
+                      text: jobSchedules[0].workShiftDescription,
+                      size: Dimensions.font34,
+                    ),
+                    SizedBox(height: Dimensions.height20),
+                    SmallText(
+                      text:
+                          "ช่วงเวลาตั้งแต่ " + jobSchedules[0].shiftTimeSlot,
+                      size: Dimensions.font28,
+                    ),
+                  ],
+                ),
                 SizedBox(height: Dimensions.height20),
                 Visibility(
                   visible: countCheckedPoints != totalCheckpoint,
@@ -625,7 +597,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 5.0), 
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -633,33 +605,93 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                   Color checkpointColor = jobSchedule.jobScheduleStatusId == 3
                       ? AppColors.mainColor.withOpacity(0.1)
                       : AppColors.successColor.withOpacity(0.6);
-                  return GestureDetector(
-                    onTap: () {
-                      _navigateToLocationDetailsPage(
-                        context,
-                        jobSchedule.jobAuthorityId,
-                        jobSchedule.jobScheduleDate,
-                        jobSchedule.jobScheduleShiftId,
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: checkpointColor,
-                        borderRadius: BorderRadius.circular(8.0),
-                        border: Border.all(
-                          color: checkpointColor,
-                          width: 2.0,
+
+                  Color hoverColor = jobSchedule.jobScheduleStatusId == 3
+                      ? AppColors.mainColor.withOpacity(0.2)
+                      : AppColors.successColor.withOpacity(0.8);
+
+                  return MouseRegion(
+                      onEnter: (_) => setState(() {
+                            checkpointColor = hoverColor;
+                          }),
+                      onExit: (_) => setState(() {
+                            checkpointColor =
+                                jobSchedule.jobScheduleStatusId == 3
+                                    ? AppColors.mainColor.withOpacity(0.1)
+                                    : AppColors.successColor.withOpacity(0.6);
+                          }),
+                      child: GestureDetector(
+                        onTap: () {
+                          _navigateToLocationDetailsPage(
+                            context,
+                            jobSchedule.jobAuthorityId,
+                            jobSchedule.jobScheduleDate,
+                            jobSchedule.jobScheduleShiftId,
+                          );
+                        },
+                        onLongPress: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('รายละเอียด'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SmallText(
+                                      text:
+                                          'พื้นที่: ${jobSchedule.zoneDescription}',
+                                      color: AppColors.greyColor,
+                                      size: Dimensions.font16,
+                                    ),
+                                    SmallText(
+                                      text:
+                                          'จุดตรวจ: ${jobSchedule.locationDescription}',
+                                      color: AppColors.greyColor,
+                                      size: Dimensions.font16,
+                                    ),
+                                    SmallText(
+                                      text:
+                                          'สถานะ: ${jobSchedule.jobScheduleStatusId == 3 ? 'ยังไม่ได้ตรวจสอบ' : 'ตรวจสอบแล้ว'}',
+                                      color:
+                                          jobSchedule.jobScheduleStatusId == 3
+                                              ? AppColors.errorColor
+                                              : AppColors.successColor,
+                                      size: Dimensions.font16,
+                                    )
+                                  ],
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text('ปิด'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: checkpointColor,
+                            borderRadius: BorderRadius.circular(8.0),
+                            border: Border.all(
+                              color: checkpointColor,
+                              width: 2.0,
+                            ),
+                          ),
+                          child: Center(
+                            child: BigText(
+                              text: '${index + 1}',
+                              size: Dimensions.font18,
+                              color: AppColors.blackColor,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: BigText(
-                          text: '${index + 1}',
-                          size: Dimensions.font18,
-                          color: AppColors.blackColor,
-                        ),
-                      ),
-                    ),
-                  );
+                      ));
                 },
                 childCount: totalCheckpoint,
               ),
