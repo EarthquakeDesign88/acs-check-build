@@ -21,12 +21,12 @@ class Location {
 
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
-      jobScheduleId: json['job_schedule_id'] ?? '',
-      locationId: json['location_id'] ?? '',
+      jobScheduleId: json['job_schedule_id'] ?? 0,
+      locationId: json['location_id'] ?? 0,
       locationDescription: json['location_description'] ?? '',
       locationQr: json['location_qr'] ?? '',
       zoneDescription: json['zone_description'] ?? '',
-      jobStatusId: json['job_status_id'] ?? '',
+      jobStatusId: json['job_status_id'] ?? 0,
       jobStatusDescription: json['job_status_description'] ?? '',
       inspectionCompletedAt: json['inspection_completed_at'] ?? '',
     );

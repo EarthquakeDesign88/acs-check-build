@@ -9,8 +9,11 @@ class AppConstants {
 
 
   static const String login = "/api/login";
+
+
   
   static const String workShift = "/api/work-shift";
+  static const String workShiftByUser = "/api/work-shift-byuser";
   static const String jobSchedule = "/api/job-schedule";
   static const String countCheckedPoints = "/api/count-checked-points";
   static const String jobStatus = "/api/job-status";
@@ -18,6 +21,7 @@ class AppConstants {
   static const String countCompletedSchedules = "/api/count-completed-schedules";
   static const String fetchLocationDetails = "/api/location-details";
   static const String fetchImagesJob = "/api/images-job";
+  static const String fetchJobScheduleHistory = "/api/job-history";
 
 
 }

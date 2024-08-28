@@ -61,7 +61,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
       final currentDate = DateTime.now();
       final formattedDate = currentDate.toIso8601String().split('T')[0];
       // print(formattedDate);
-      final shifts = await workShiftService.fetchWorkShifts(userId!, formattedDate);
+      final shifts = await workShiftService.fetchWorkShiftsByUser(userId!, formattedDate);
 
       setState(() {
         workShifts = shifts;
@@ -158,7 +158,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
               },
             ),
             ListTile(
-              title: SmallText(text: "ประวัติสแกน", size: Dimensions.font18),
+              title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
               onTap: () {
                 Get.toNamed(RouteHelper.timeSlotDetail);
               },
@@ -218,7 +218,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
                         return _buildTimeSlotTile(
                           context,
                           workShift.shiftTimeSlot,
-                          workShift.jobScheduleShiftId
+                          workShift.workShiftId
                         );
                       },
                     ),

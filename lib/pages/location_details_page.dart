@@ -80,10 +80,6 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   }
 
   Future<void> _fetchImagesAndShowDialog(int jobScheduleId) async {
-    // setState(() {
-    //   isLoading = true;
-    // });
-
     final fetchedImages = await jobImageService.fetchImagesJob(jobScheduleId);
 
     setState(() {
@@ -147,7 +143,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
               },
             ),
             ListTile(
-              title: SmallText(text: "ประวัติสแกน", size: Dimensions.font18),
+              title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
               onTap: () {
                 Get.toNamed(RouteHelper.timeSlotDetail);
               },

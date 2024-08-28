@@ -94,13 +94,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   }
 
   Future<void> _fetchJobStatus() async {
-    final arguments = Get.arguments as Map<String, dynamic>;
-    final int userId = arguments['userId'];
-    final String jobScheduleDate = arguments['jobScheduleDate'];
-    final int jobScheduleShiftId = arguments['jobScheduleShiftId'];
-
-    final statuses = await jobScheduleService.fetchJobStatus(
-        userId, jobScheduleDate, jobScheduleShiftId);
+    final statuses = await jobScheduleService.fetchJobStatus();
 
     setState(() {
       jobStatuses = statuses
@@ -365,7 +359,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
               },
             ),
             ListTile(
-              title: SmallText(text: "ประวัติสแกน", size: Dimensions.font18),
+              title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
               onTap: () {
                 Get.toNamed(RouteHelper.timeSlotDetail);
               },

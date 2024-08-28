@@ -60,15 +60,9 @@ class JobScheduleService {
     return null;
   }
 
-  Future<List<Map<String, dynamic>>?> fetchJobStatus(
-      int userId, String currentDate, int jobScheduleShiftId) async {
+  Future<List<Map<String, dynamic>>?> fetchJobStatus() async {
     try {
-      final uri = Uri.parse('${AppConstants.baseUrl}${AppConstants.jobStatus}')
-          .replace(queryParameters: {
-        'user_id': userId.toString(),
-        'job_schedule_date': currentDate,
-        'job_schedule_shift_id': jobScheduleShiftId.toString(),
-      });
+      final uri = Uri.parse('${AppConstants.baseUrl}${AppConstants.jobStatus}');
 
       final response = await http.get(
         uri,
@@ -78,6 +72,7 @@ class JobScheduleService {
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(
           json.decode(response.body) as List<dynamic>,
+          
         );
       } else {
         print('Failed to load job statuses');
@@ -181,4 +176,31 @@ class JobScheduleService {
   }
 
 
-}
+  Future<List<JobSchedule>?> fetchJobSchedulesHistory(
+    int userId, String date, int? jobScheduleShiftId, int? jobScheduleStatusId) async {
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.baseUrl}${AppConstants.fetchJobScheduleHistory}'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'user_id': userId,
+            'job_schedule_date': date,
+            'job_schedule_shift_id': jobScheduleShiftId,
+            'job_schedule_status_id': jobScheduleStatusId
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final List<dynamic> responseData = json.decode(response.body);
+          // print('Response Data: $responseData');
+          return responseData.map((data) => JobSchedule.fromJson(data)).toList();
+        } else {
+          print('Failed to load job history');
+        }
+      } catch (e) {
+        print('Error during API call: $e');
+      }
+      return null;
+    }
+
+  }
