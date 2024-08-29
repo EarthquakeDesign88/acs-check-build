@@ -88,6 +88,12 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
     });
   }
 
+  void _onTabChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,7 +151,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
             ListTile(
               title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
               onTap: () {
-                Get.toNamed(RouteHelper.timeSlotDetail);
+                Get.offNamed(RouteHelper.historyJob);
               },
             ),
             ListTile(
@@ -271,9 +277,9 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                     ));
               },
             ),
-      bottomNavigationBar: BottomNavbar(
-        currentIndex: 0,
-        onTabChanged: (index) {},
+     bottomNavigationBar: BottomNavbar(
+        currentIndex: _currentIndex,
+        onTabChanged: _onTabChanged,
       ),
     );
   }

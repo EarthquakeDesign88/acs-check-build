@@ -27,9 +27,9 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   final JobScheduleService jobScheduleService = JobScheduleService();
   final ImagePicker _picker = ImagePicker();
 
-  String scannedCode = '';
-
   int _currentIndex = 0;
+  
+  String scannedCode = '';
 
   int? userId;
   String? firstName;
@@ -305,7 +305,6 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -363,7 +362,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
             ListTile(
               title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
               onTap: () {
-                Get.toNamed(RouteHelper.timeSlotDetail);
+                Get.offNamed(RouteHelper.historyJob);
               },
             ),
             ListTile(
@@ -598,13 +597,25 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   JobSchedule jobSchedule = jobSchedules[index];
-                  Color checkpointColor = jobSchedule.jobScheduleStatusId == 3
-                      ? AppColors.mainColor.withOpacity(0.1)
-                      : AppColors.successColor.withOpacity(0.6);
+                  Color checkpointColor;
+                  Color hoverColor;
 
-                  Color hoverColor = jobSchedule.jobScheduleStatusId == 3
-                      ? AppColors.mainColor.withOpacity(0.2)
-                      : AppColors.successColor.withOpacity(0.8);
+                  if (jobSchedule.jobScheduleStatusId == 3) {
+                    checkpointColor = AppColors.mainColor.withOpacity(0.1);
+                    hoverColor = AppColors.mainColor.withOpacity(0.2);
+                  } 
+                  else if (jobSchedule.jobScheduleStatusId == 1) {
+                    checkpointColor = AppColors.successColor.withOpacity(0.6);
+                    hoverColor = AppColors.successColor.withOpacity(0.8);
+                  } 
+                  else if (jobSchedule.jobScheduleStatusId == 2) {
+                    checkpointColor = AppColors.errorColor.withOpacity(0.6);
+                    hoverColor = AppColors.errorColor.withOpacity(0.8);
+                  } else {
+                    checkpointColor = Colors.grey.withOpacity(0.1);
+                    hoverColor = Colors.grey.withOpacity(0.2); 
+                  }
+
 
                   return MouseRegion(
                       onEnter: (_) => setState(() {
@@ -701,7 +712,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
         ],
       ),
       bottomNavigationBar: BottomNavbar(
-        currentIndex: _currentIndex,
+      currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
       ),
     );

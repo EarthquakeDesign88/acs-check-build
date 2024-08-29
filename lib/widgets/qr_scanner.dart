@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:acs_check/widgets/big_text.dart';
+import 'package:acs_check/widgets/small_text.dart';
 
 
 class QRScanner extends StatefulWidget {
@@ -67,8 +68,15 @@ class _QRScannerState extends State<QRScanner> {
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState == ConnectionState.done) {
                                   bool isFlashOn = snapshot.data == true; 
-                                  return Text(isFlashOn ? 'แฟลช: เปิด' : 'แฟลช: ปิด', style: TextStyle(fontSize: 20, color: AppColors.greyColor)); 
+                                  return SmallText(
+                                    text: isFlashOn ? "แฟลช: เปิด" : "แฟลช: ปิด",
+                                    size: Dimensions.font20, 
+                                    color: AppColors.darkGreyColor
+                                  ); 
                                 } 
+                                else {
+                                  return CircularProgressIndicator(); 
+                                }
                               },
                             )),
                       ),
@@ -76,9 +84,13 @@ class _QRScannerState extends State<QRScanner> {
                         margin: const EdgeInsets.all(8),
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pop(context); // กลับไปยังหน้าเดิม
+                            Navigator.pop(context); 
                           },
-                          child: const Text('ยกเลิก', style: TextStyle(fontSize: 20, color: AppColors.greyColor)),
+                          child: SmallText(
+                            text: "ยกเลิก", 
+                            size: Dimensions.font20,
+                            color: AppColors.darkGreyColor
+                          ),
                         ),
                        )
                     ],
@@ -114,13 +126,11 @@ class _QRScannerState extends State<QRScanner> {
   }
 
   Widget _buildQrView(BuildContext context) {
-    // For this example we check how width or tall the device is and change the scanArea and overlay accordingly.
-    var scanArea = (MediaQuery.of(context).size.width < 500 ||
-            MediaQuery.of(context).size.height < 500)
-        ? 200.0
-        : 400.0;
-    // To ensure the Scanner view is properly sizes after rotation
-    // we need to listen for Flutter SizeChanged notification and update controller
+  var scanArea = (MediaQuery.of(context).size.width < 400 ||
+            MediaQuery.of(context).size.height < 400)
+    ? MediaQuery.of(context).size.width * 0.8
+    : MediaQuery.of(context).size.width * 0.6;
+   
     return QRView(
       key: qrKey,
       onQRViewCreated: _onQRViewCreated,

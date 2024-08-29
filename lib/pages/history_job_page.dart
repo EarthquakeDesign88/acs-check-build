@@ -26,7 +26,7 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
   final JobScheduleService jobScheduleService = JobScheduleService();
   final WorkShiftService workShiftService = WorkShiftService();
 
-  int _currentIndex = 0;
+  int _currentIndex = 1;
 
   int? userId;
   String? firstName;
@@ -152,7 +152,6 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
 
     setState(() {
       images = List<Map<String, dynamic>>.from(fetchedImages ?? []);
-      isLoading = false;
     });
   }
 
@@ -178,7 +177,7 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
                   : Expanded(child: _buildJobSchedulesList()),
             ],
           )),
-      bottomNavigationBar: BottomNavbar(
+     bottomNavigationBar: BottomNavbar(
         currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
       ),
@@ -226,7 +225,7 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
           ListTile(
             title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
             onTap: () {
-              Get.toNamed(RouteHelper.timeSlotDetail);
+              Get.offNamed(RouteHelper.historyJob);
             },
           ),
           ListTile(
@@ -375,7 +374,6 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
                       } else {
                         setState(() {
                           selectedJobScheduleId = jobSchedule.jobScheduleId;
-                          isLoading = true;
                         });
 
                         await _fetchImagesAndShowDialog(selectedJobScheduleId!);

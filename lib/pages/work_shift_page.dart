@@ -160,7 +160,7 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
             ListTile(
               title: SmallText(text: "ประวัติตรวจงาน", size: Dimensions.font18),
               onTap: () {
-                Get.toNamed(RouteHelper.timeSlotDetail);
+                Get.offNamed(RouteHelper.historyJob);
               },
             ),
             ListTile(
@@ -258,9 +258,9 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
                   ),
               ],
             ),
-      bottomNavigationBar: BottomNavbar(
-        currentIndex: 0,
-        onTabChanged: (index) {},
+     bottomNavigationBar: BottomNavbar(
+        currentIndex: _currentIndex,
+        onTabChanged: _onTabChanged,
       ),
     );
   }

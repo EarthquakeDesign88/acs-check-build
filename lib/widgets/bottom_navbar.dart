@@ -26,7 +26,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
         if (index == 0) {
           Get.offNamed(RouteHelper.workSchedule);
         } 
-        else {
+        else if (index == 1) {
           Get.offNamed(RouteHelper.historyJob);
         }
       },
