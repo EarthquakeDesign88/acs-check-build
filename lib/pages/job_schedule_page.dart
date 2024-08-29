@@ -5,14 +5,15 @@ import 'package:acs_check/utils/constants.dart';
 import 'package:acs_check/widgets/bottom_navbar.dart';
 import 'package:acs_check/widgets/big_text.dart';
 import 'package:acs_check/widgets/small_text.dart';
+import 'package:acs_check/widgets/qr_scanner.dart';
 import 'package:acs_check/services/auth_service.dart';
-import 'package:simple_barcode_scanner/simple_barcode_scanner.dart';
 import 'package:get/get.dart';
 import 'package:acs_check/routes/route_helper.dart';
 import 'package:acs_check/models/job_schedule_model.dart';
 import 'package:acs_check/services/job_schedule_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:acs_check/pages/location_details_page.dart';
+
+
 
 class JobSchedulePage extends StatefulWidget {
   const JobSchedulePage({Key? key}) : super(key: key);
@@ -304,6 +305,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -402,17 +404,17 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                   visible: countCheckedPoints != totalCheckpoint,
                   child: ElevatedButton(
                     onPressed: () async {
-                      var res = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const SimpleBarcodeScannerPage(),
-                          ));
-                      setState(() {
-                        if (res is String) {
-                          scannedCode = res;
+                      var result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const QRScanner(),
+                        ));
+                    
+                        if (result is String && result.isNotEmpty) {
+                          setState(() {
+                            scannedCode = result;
+                          });
                         }
-                      });
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.mainColor,
