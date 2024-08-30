@@ -20,16 +20,21 @@ class _QRScannerState extends State<QRScanner> {
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
 
-  // In order to get hot reload to work we need to pause the camera if the platform
-  // is android, or resume the camera if the platform is iOS.
+  bool? isFlashOn;
+
   @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller!.pauseCamera();
-    }
-    controller!.resumeCamera();
+  void initState() {
+    super.initState();
+    _getFlashStatus(); 
   }
+
+  Future<void> _getFlashStatus() async {
+    bool? status = await controller?.getFlashStatus();
+    setState(() {
+      isFlashOn = status;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -46,40 +51,34 @@ class _QRScannerState extends State<QRScanner> {
                 children: <Widget>[
                 if (result != null)
                   BigText(
-                    text: 'รหัสจุดตรวจ: ${result!.code}',
+                    text: 'รหัสคิวอาร์โค้ด: ${result!.code}',
                     size: Dimensions.font20 
                   )
                 else
                     SizedBox(height: Dimensions.height5),
-                    BigText(text: 'สแกนจุดตรวจ', size: Dimensions.font20),
+                    Visibility(
+                      visible: result == null,
+                      child: BigText(text: 'สแกนจุดตรวจ', size: Dimensions.font20)
+                    ),
                     Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
-                      Container(
+                     Container(
                         margin: const EdgeInsets.all(8),
                         child: ElevatedButton(
-                           onPressed: () async {
-                              await controller?.toggleFlash();
-                              setState(() {});
-                            },
-                            child: FutureBuilder(
-                              future: controller?.getFlashStatus(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.done) {
-                                  bool isFlashOn = snapshot.data == true; 
-                                  return SmallText(
-                                    text: isFlashOn ? "แฟลช: เปิด" : "แฟลช: ปิด",
-                                    size: Dimensions.font20, 
-                                    color: AppColors.darkGreyColor
-                                  ); 
-                                } 
-                                else {
-                                  return CircularProgressIndicator(); 
-                                }
-                              },
-                            )),
+                          onPressed: () async {
+                            await controller?.toggleFlash();
+                            await _getFlashStatus(); 
+                          },
+                          child: SmallText(
+                            text: isFlashOn == true ? "แฟลช: เปิด" : "แฟลช: ปิด",
+                            size: Dimensions.font20, 
+                            color: AppColors.darkGreyColor
+                          ),
+                        ),
                       ),
+
                        Container(
                         margin: const EdgeInsets.all(8),
                         child: ElevatedButton(

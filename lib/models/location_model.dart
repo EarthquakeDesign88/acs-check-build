@@ -2,7 +2,7 @@ class Location {
   final int jobScheduleId;
   final int locationId;
   final String locationDescription;
-  final String locationQr;
+  final String locationQR;
   final String zoneDescription;
   final int jobStatusId;
   final String jobStatusDescription;
@@ -12,7 +12,7 @@ class Location {
     required this.jobScheduleId,
     required this.locationId,
     required this.locationDescription,
-    required this.locationQr,
+    required this.locationQR,
     required this.zoneDescription,
     required this.jobStatusId,
     required this.jobStatusDescription,
@@ -24,7 +24,7 @@ class Location {
       jobScheduleId: json['job_schedule_id'] ?? 0,
       locationId: json['location_id'] ?? 0,
       locationDescription: json['location_description'] ?? '',
-      locationQr: json['location_qr'] ?? '',
+      locationQR: json['location_qr'] ?? '',
       zoneDescription: json['zone_description'] ?? '',
       jobStatusId: json['job_status_id'] ?? 0,
       jobStatusDescription: json['job_status_description'] ?? '',

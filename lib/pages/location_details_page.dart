@@ -48,44 +48,55 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
     _loadLocationDetails();
   }
 
-  void _loadUserData() async {
-    final storedUserId = await authService.getUserId();
-    final storedFirstName = await authService.getFirstName();
-    final storedLastName = await authService.getLastName();
+  Future<void> _loadUserData() async {
+    try {
+      final storedUserId = await authService.getUserId();
+      final storedFirstName = await authService.getFirstName();
+      final storedLastName = await authService.getLastName();
 
-    setState(() {
-      userId = storedUserId;
-      firstName = storedFirstName;
-      lastName = storedLastName;
-    });
+      setState(() {
+        userId = storedUserId;
+        firstName = storedFirstName;
+        lastName = storedLastName;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
-  void _loadLocationDetails() async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> _loadLocationDetails() async {
+    try {
+      final arguments = Get.arguments as Map<String, dynamic>;
+      final jobAuthorityId = arguments['jobAuthorityId'];
+      final jobScheduleDate = arguments['jobScheduleDate'];
+      final jobScheduleShiftId = arguments['jobScheduleShiftId'];
 
-    final arguments = Get.arguments as Map<String, dynamic>;
-    final jobAuthorityId = arguments['jobAuthorityId'];
-    final jobScheduleDate = arguments['jobScheduleDate'];
-    final jobScheduleShiftId = arguments['jobScheduleShiftId'];
+      final fetchedLocationDetails = await locationService.fetchLocationDetails(
+          jobAuthorityId, jobScheduleDate, jobScheduleShiftId);
 
-    final fetchedLocationDetails = await locationService.fetchLocationDetails(
-        jobAuthorityId, jobScheduleDate, jobScheduleShiftId);
+      setState(() {
+        locationDetails = fetchedLocationDetails ?? [];
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading location details: $e');
 
-    setState(() {
-      locationDetails = fetchedLocationDetails ?? [];
-      isLoading = false;
-    });
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _fetchImagesAndShowDialog(int jobScheduleId) async {
-    final fetchedImages = await jobImageService.fetchImagesJob(jobScheduleId);
-
-    setState(() {
-      images = List<Map<String, dynamic>>.from(fetchedImages ?? []);
-      isLoading = false;
-    });
+    try {
+      final fetchedImages = await jobImageService.fetchImagesJob(jobScheduleId);
+      setState(() {
+        images = List<Map<String, dynamic>>.from(fetchedImages ?? []);
+      });
+    } catch (e) {
+      // Handle errors or show a message
+      print('Error fetching images: $e');
+    }
   }
 
   void _onTabChanged(int index) {
@@ -173,113 +184,135 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
               itemCount: locationDetails.length,
               itemBuilder: (context, index) {
                 final location = locationDetails[index];
-                return Container(
-                    margin: EdgeInsets.symmetric(vertical: Dimensions.height10),
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: AppColors.whiteColor,
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 5.0,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildDetailRow(
-                          'พื้นที่:',
-                          location.zoneDescription,
-                          AppColors.greyColor,
-                        ),
-                        _buildDetailRow(
-                          'จุดตรวจ:',
-                          location.locationDescription,
-                          AppColors.greyColor,
-                        ),
-                        _buildDetailRow(
-                          'สถานะ:',
-                          location.jobStatusId != 3
-                              ? "ตรวจสอบแล้ว"
-                              : "ยังไม่ได้ตรวจสอบ",
-                          location.jobStatusId != 3
-                              ? AppColors.greyColor
-                              : AppColors.errorColor,
-                        ),
-                        if (location.jobStatusId != 3)
-                          _buildDetailRow(
-                            'รายละเอียดสถานะ:',
-                            location.jobStatusDescription,
-                            location.jobStatusId == 1
-                                ? AppColors.successColor
-                                : AppColors.errorColor,
-                          ),
-                        _buildDetailRow(
-                          'ตรวจสอบเวลา:',
-                          location.inspectionCompletedAt,
-                          AppColors.greyColor,
-                        ),
-                        if (location.jobStatusId == 2) ...[
-                          SizedBox(height: Dimensions.height10),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _fetchImagesAndShowDialog(location.jobScheduleId);
-
-                              setState(() {
-                                showImages = !showImages;
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.mainColor,
-                              elevation: 3,
-                              padding: const EdgeInsets.all(16.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                            child: SmallText(
-                              text: showImages ? "ปิด" : "ดูรูปภาพปัญหา",
-                              size: Dimensions.font18,
-                              color: AppColors.whiteColor,
-                            ),
-                          ),
-                          SizedBox(height: Dimensions.height10),
-                        ],
-                        Visibility(
-                          visible: showImages,
-                          child: Column(
-                            children: [
-                              if (images.isNotEmpty)
-                                ...images.map((image) {
-                                  String imagePath = image['image_path'];
-                                  if (!imagePath.startsWith('http')) {
-                                    imagePath = '${AppConstants.baseUrl}/storage/$imagePath';
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
-                                    child: Image.network(imagePath),
-                                  );
-                                }).toList()
-                              else
-                                SmallText(
-                                  text: "ไม่มีรูปภาพ",
-                                  size: Dimensions.font16,
-                                  color: AppColors.greyColor,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ));
+                return _buildLocationCard(location);
               },
             ),
-     bottomNavigationBar: BottomNavbar(
+      bottomNavigationBar: BottomNavbar(
         currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
+      ),
+    );
+  }
+
+  Widget _buildLocationCard(Location location) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: Dimensions.height10),
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(8.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 5.0,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDetailRow(
+            'พื้นที่:',
+            location.zoneDescription,
+            AppColors.greyColor,
+          ),
+          _buildDetailRow(
+            'จุดตรวจ:',
+            location.locationDescription,
+            AppColors.greyColor,
+          ),
+          _buildDetailRow(
+            'สถานะ:',
+            location.jobStatusId != 3 ? "ตรวจสอบแล้ว" : "ยังไม่ได้ตรวจสอบ",
+            location.jobStatusId != 3
+                ? AppColors.greyColor
+                : AppColors.errorColor,
+          ),
+          if (location.jobStatusId != 3)
+            _buildDetailRow(
+              'รายละเอียดสถานะ:',
+              location.jobStatusDescription,
+              location.jobStatusId == 1
+                  ? AppColors.successColor
+                  : AppColors.errorColor,
+            ),
+          _buildDetailRow(
+            'ตรวจสอบเวลา:',
+            location.inspectionCompletedAt,
+            AppColors.greyColor,
+          ),
+          if (location.jobStatusId == 2) ...[
+            SizedBox(height: Dimensions.height10),
+            ElevatedButton(
+              onPressed: () async {
+                await _fetchImagesAndShowDialog(location.jobScheduleId);
+                setState(() {
+                  showImages = !showImages;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainColor,
+                elevation: 3,
+                padding: const EdgeInsets.all(16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: SmallText(
+                text: showImages ? "ปิด" : "ดูรูปภาพปัญหา",
+                size: Dimensions.font18,
+                color: AppColors.whiteColor,
+              ),
+            ),
+            SizedBox(height: Dimensions.height10),
+          ],
+          Visibility(
+            visible: showImages,
+            child: Column(
+              children: [
+                if (images.isNotEmpty)
+                  ...images.map((image) {
+                    String imagePath = image['image_path'];
+                    if (!imagePath.startsWith('http')) {
+                      imagePath = '${AppConstants.baseUrl}/storage/$imagePath';
+                    } 
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Image.network(
+                        imagePath,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          } else {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        (loadingProgress.expectedTotalBytes ??
+                                            1)
+                                    : null,
+                              ),
+                            );
+                          }
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(child: Text('ไม่สามารถโหลดรูปภาพได้'));
+                        },
+                      ),
+                    );
+                  }).toList()
+                else
+                  SmallText(
+                    text: "ไม่มีรูปภาพ",
+                    size: Dimensions.font16,
+                    color: AppColors.greyColor,
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

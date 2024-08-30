@@ -28,4 +28,26 @@ class LocationService {
     }
     return null;
   }
+
+  Future<Location?> checkLocation(String? qrCode) async {
+  try {
+    final response = await http.post(
+      Uri.parse('${AppConstants.baseUrl}${AppConstants.checkLocation}'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'location_qr': qrCode}),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      return Location.fromJson(responseData);
+    } else {
+      print('Failed to load location');
+    }
+  } catch (e) {
+    print('Error during API call: $e');
+  }
+  return null;
+}
+
 }

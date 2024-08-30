@@ -24,6 +24,7 @@ class AppConstants {
   static const String fetchLocationDetails = "/api/location-details";
   static const String fetchImagesJob = "/api/images-job";
   static const String fetchJobScheduleHistory = "/api/job-history";
+  static const String checkLocation = "/api/check-location";
 
 
 }

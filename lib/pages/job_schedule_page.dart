@@ -12,8 +12,8 @@ import 'package:acs_check/routes/route_helper.dart';
 import 'package:acs_check/models/job_schedule_model.dart';
 import 'package:acs_check/services/job_schedule_service.dart';
 import 'package:image_picker/image_picker.dart';
-
-
+import 'package:acs_check/models/location_model.dart';
+import 'package:acs_check/services/location_service.dart';
 
 class JobSchedulePage extends StatefulWidget {
   const JobSchedulePage({Key? key}) : super(key: key);
@@ -25,11 +25,14 @@ class JobSchedulePage extends StatefulWidget {
 class _JobSchedulePageState extends State<JobSchedulePage> {
   final AuthService authService = AuthService();
   final JobScheduleService jobScheduleService = JobScheduleService();
+  final LocationService locationService = LocationService();
   final ImagePicker _picker = ImagePicker();
 
   int _currentIndex = 0;
-  
+
   String scannedCode = '';
+  String locationDescription = '';
+  String locationQR = '';
 
   int? userId;
   String? firstName;
@@ -286,6 +289,37 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     }
   }
 
+  Future<void> _loadLocationDescription(String scannedCode) async {
+    setState(() {
+      isLoading = true; 
+    });
+
+    try {
+      final location = await locationService.checkLocation(scannedCode);
+      
+    if (location != null) {
+      setState(() {
+        locationDescription = location.locationDescription;
+        locationQR = location.locationQR;
+      });
+    } else {
+        setState(() {
+          locationDescription = 'ไม่พบข้อมูล';
+          locationQR = 'ไม่พบข้อมูล';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        locationDescription = 'พบข้อผิดพลาด';
+        locationQR = 'ไม่พบข้อมูล';
+      });
+    } finally {
+      setState(() {
+        isLoading = false; 
+      });
+    }
+  }
+
   void _navigateToLocationDetailsPage(BuildContext context, int jobAuthorityId,
       String jobScheduleDate, int jobScheduleShiftId) {
     Get.to(
@@ -378,341 +412,361 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
         ),
       ),
       body: isJobSchedulesLoading
-          ? Center(child: CircularProgressIndicator()) : CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                SizedBox(height: Dimensions.height20),
-                Column(
-                  children: [
-                    BigText(
-                      text: jobSchedules[0].workShiftDescription,
-                      size: Dimensions.font34,
-                    ),
-                    SizedBox(height: Dimensions.height20),
-                    SmallText(
-                      text:
-                          "ช่วงเวลาตั้งแต่ " + jobSchedules[0].shiftTimeSlot,
-                      size: Dimensions.font28,
-                    ),
-                  ],
-                ),
-                SizedBox(height: Dimensions.height20),
-                Visibility(
-                  visible: countCheckedPoints != totalCheckpoint,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      var result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const QRScanner(),
-                        ));
-                    
-                        if (result is String && result.isNotEmpty) {
-                          setState(() {
-                            scannedCode = result;
-                          });
-                        }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mainColor,
-                      elevation: 3,
-                      padding: const EdgeInsets.all(16.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    child: SmallText(
-                        text: scannedCode.isEmpty ? "สแกนจุดตรวจ" : "สแกนใหม่",
-                        color: AppColors.whiteColor),
-                  ),
-                ),
-                SizedBox(height: Dimensions.height20),
-                Visibility(
-                  visible: scannedCode.isNotEmpty,
+          ? Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
                   child: Column(
                     children: [
-                      SmallText(
-                        text: "รหัสคิวอาร์โค้ด: $scannedCode",
-                        size: Dimensions.font20,
-                        color: AppColors.mainColor,
-                      ),
-                      SizedBox(height: Dimensions.height10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: jobStatuses.map((status) {
-                          bool isActive =
-                              selectedJobStatusId == status['job_status_id'];
-                          bool isNoProblem =
-                              status['job_status_description'] == 'ไม่พบปัญหา';
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  selectedJobStatusId = status['job_status_id'];
-                                  if (selectedJobStatusId == 1) {
-                                    _images = [];
-                                  }
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isActive
-                                    ? (isNoProblem
-                                        ? AppColors.successColor
-                                        : AppColors.errorColor)
-                                    : AppColors.greyColor,
-                                elevation: 3,
-                                padding: const EdgeInsets.all(16.0),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                              child: SmallText(
-                                  text: status['job_status_description'],
-                                  size: Dimensions.font20,
-                                  color: AppColors.whiteColor),
-                            ),
-                          );
-                        }).toList(),
-                      ),
                       SizedBox(height: Dimensions.height20),
-                      Visibility(
-                        visible: selectedJobStatusId == 2,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              onPressed: _takePicture,
-                              child: Text("ถ่ายรูป"),
-                            ),
-                            SizedBox(width: 10),
-                            ElevatedButton(
-                              onPressed: _pickImages,
-                              child: Text("อัปโหลดรูปภาพ"),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: Dimensions.height20),
-                      Visibility(
-                        visible: selectedJobStatusId != null,
-                        child: ElevatedButton(
-                          onPressed: () => _onConfirmInspection(),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.mainColor,
-                              elevation: 3,
-                              padding: const EdgeInsets.all(16.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              )),
-                          child: SmallText(
-                            text: "ยืนยันการตรวจสอบ",
-                            size: Dimensions.font20,
-                            color: AppColors.whiteColor,
+                      Column(
+                        children: [
+                          BigText(
+                            text: jobSchedules[0].workShiftDescription,
+                            size: Dimensions.font34,
                           ),
+                          SizedBox(height: Dimensions.height20),
+                          SmallText(
+                            text: "ช่วงเวลาตั้งแต่ " +
+                                jobSchedules[0].shiftTimeSlot,
+                            size: Dimensions.font28,
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: Dimensions.height20),
+                      Visibility(
+                        visible: countCheckedPoints != totalCheckpoint,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            var result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const QRScanner(),
+                                ));
+
+                            if (result is String && result.isNotEmpty) {
+                              setState(() {
+                                scannedCode = result;
+                              });
+
+                              await _loadLocationDescription(scannedCode);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.mainColor,
+                            elevation: 3,
+                            padding: const EdgeInsets.all(16.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          child: SmallText(
+                              text: scannedCode.isEmpty
+                                  ? "สแกนจุดตรวจ"
+                                  : "สแกนใหม่",
+                              color: AppColors.whiteColor),
                         ),
                       ),
+                      SizedBox(height: Dimensions.height20),
                       Visibility(
-                        visible: _images!.isNotEmpty,
+                        visible: scannedCode.isNotEmpty,
                         child: Column(
                           children: [
-                            SizedBox(height: Dimensions.height20),
-                            SizedBox(
-                              height: 100,
-                              child: GridView.builder(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 8.0,
-                                  mainAxisSpacing: 8.0,
-                                ),
-                                itemCount: _images!.length,
-                                itemBuilder: (context, index) {
-                                  return Stack(
-                                    children: [
-                                      Wrap(
-                                        children: _images!
-                                            .asMap()
-                                            .entries
-                                            .map((entry) {
-                                          int index = entry.key;
-                                          XFile imageFile = entry.value;
-                                          return _buildImagePreview(
-                                              imageFile, index);
-                                        }).toList(),
+                            SmallText(
+                              text: "จุดตรวจ: ${locationDescription}",
+                              size: Dimensions.font20,
+                              color: AppColors.mainColor,
+                            ),
+                            SizedBox(height: Dimensions.height10),
+                            SmallText(
+                              text: "QR: ${locationQR}",
+                              size: Dimensions.font20,
+                              color: AppColors.mainColor,
+                            ),
+                            SizedBox(height: Dimensions.height10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: jobStatuses.map((status) {
+                                bool isActive = selectedJobStatusId ==
+                                    status['job_status_id'];
+                                bool isNoProblem =
+                                    status['job_status_description'] ==
+                                        'ไม่พบปัญหา';
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedJobStatusId =
+                                            status['job_status_id'];
+                                        if (selectedJobStatusId == 1) {
+                                          _images = [];
+                                        }
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isActive
+                                          ? (isNoProblem
+                                              ? AppColors.successColor
+                                              : AppColors.errorColor)
+                                          : AppColors.greyColor,
+                                      elevation: 3,
+                                      padding: const EdgeInsets.all(16.0),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
                                       ),
-                                    ],
-                                  );
-                                },
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
+                                    ),
+                                    child: SmallText(
+                                        text: status['job_status_description'],
+                                        size: Dimensions.font20,
+                                        color: AppColors.whiteColor),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            SizedBox(height: Dimensions.height20),
+                            Visibility(
+                              visible: selectedJobStatusId == 2,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _takePicture,
+                                    child: Text("ถ่ายรูป"),
+                                  ),
+                                  SizedBox(width: 10),
+                                  ElevatedButton(
+                                    onPressed: _pickImages,
+                                    child: Text("อัปโหลดรูปภาพ"),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: Dimensions.height20),
+                            Visibility(
+                              visible: selectedJobStatusId != null,
+                              child: ElevatedButton(
+                                onPressed: () => _onConfirmInspection(),
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.mainColor,
+                                    elevation: 3,
+                                    padding: const EdgeInsets.all(16.0),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    )),
+                                child: SmallText(
+                                  text: "ยืนยันการตรวจสอบ",
+                                  size: Dimensions.font20,
+                                  color: AppColors.whiteColor,
+                                ),
+                              ),
+                            ),
+                            Visibility(
+                              visible: _images!.isNotEmpty,
+                              child: Column(
+                                children: [
+                                  SizedBox(height: Dimensions.height20),
+                                  SizedBox(
+                                    height: 100,
+                                    child: GridView.builder(
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: 8.0,
+                                        mainAxisSpacing: 8.0,
+                                      ),
+                                      itemCount: _images!.length,
+                                      itemBuilder: (context, index) {
+                                        return Stack(
+                                          children: [
+                                            Wrap(
+                                              children: _images!
+                                                  .asMap()
+                                                  .entries
+                                                  .map((entry) {
+                                                int index = entry.key;
+                                                XFile imageFile = entry.value;
+                                                return _buildImagePreview(
+                                                    imageFile, index);
+                                              }).toList(),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
+                      SizedBox(height: Dimensions.height10),
+                      isJobSchedulesLoading
+                          ? CircularProgressIndicator()
+                          : jobSchedules.isNotEmpty
+                              ? countCheckedPoints == totalCheckpoint
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: AppColors.successColor,
+                                          size: Dimensions.font22,
+                                        ),
+                                        SizedBox(width: 8),
+                                        BigText(
+                                          text: "ตรวจครบแล้ว",
+                                          size: Dimensions.font22,
+                                          color: AppColors.successColor,
+                                        ),
+                                      ],
+                                    )
+                                  : SmallText(
+                                      text:
+                                          "ตรวจไปแล้ว (${countCheckedPoints}/${totalCheckpoint})",
+                                      size: Dimensions.font20,
+                                    )
+                              : SmallText(
+                                  text: "ไม่พบข้อมูล",
+                                  size: Dimensions.font20,
+                                ),
+                      SizedBox(height: Dimensions.height10),
                     ],
                   ),
                 ),
-                SizedBox(height: Dimensions.height10),
-                isJobSchedulesLoading
-                    ? CircularProgressIndicator()
-                    : jobSchedules.isNotEmpty
-                        ? countCheckedPoints == totalCheckpoint
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: AppColors.successColor,
-                                    size: Dimensions.font22,
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        JobSchedule jobSchedule = jobSchedules[index];
+                        Color checkpointColor;
+                        Color hoverColor;
+
+                        if (jobSchedule.jobScheduleStatusId == 3) {
+                          checkpointColor =
+                              AppColors.mainColor.withOpacity(0.1);
+                          hoverColor = AppColors.mainColor.withOpacity(0.2);
+                        } else if (jobSchedule.jobScheduleStatusId == 1) {
+                          checkpointColor =
+                              AppColors.successColor.withOpacity(0.6);
+                          hoverColor = AppColors.successColor.withOpacity(0.8);
+                        } else if (jobSchedule.jobScheduleStatusId == 2) {
+                          checkpointColor =
+                              AppColors.errorColor.withOpacity(0.6);
+                          hoverColor = AppColors.errorColor.withOpacity(0.8);
+                        } else {
+                          checkpointColor = Colors.grey.withOpacity(0.1);
+                          hoverColor = Colors.grey.withOpacity(0.2);
+                        }
+
+                        return MouseRegion(
+                            onEnter: (_) => setState(() {
+                                  checkpointColor = hoverColor;
+                                }),
+                            onExit: (_) => setState(() {
+                                  checkpointColor =
+                                      jobSchedule.jobScheduleStatusId == 3
+                                          ? AppColors.mainColor.withOpacity(0.1)
+                                          : AppColors.successColor
+                                              .withOpacity(0.6);
+                                }),
+                            child: GestureDetector(
+                              onTap: () {
+                                _navigateToLocationDetailsPage(
+                                  context,
+                                  jobSchedule.jobAuthorityId,
+                                  jobSchedule.jobScheduleDate,
+                                  jobSchedule.jobScheduleShiftId,
+                                );
+                              },
+                              onLongPress: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('รายละเอียด'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          SmallText(
+                                            text:
+                                                'พื้นที่: ${jobSchedule.zoneDescription}',
+                                            color: AppColors.greyColor,
+                                            size: Dimensions.font16,
+                                          ),
+                                          SmallText(
+                                            text:
+                                                'จุดตรวจ: ${jobSchedule.locationDescription}',
+                                            color: AppColors.greyColor,
+                                            size: Dimensions.font16,
+                                          ),
+                                          SmallText(
+                                            text:
+                                                'สถานะ: ${jobSchedule.jobScheduleStatusId == 3 ? 'ยังไม่ได้ตรวจสอบ' : 'ตรวจสอบแล้ว'}',
+                                            color: jobSchedule
+                                                        .jobScheduleStatusId ==
+                                                    3
+                                                ? AppColors.errorColor
+                                                : AppColors.successColor,
+                                            size: Dimensions.font16,
+                                          )
+                                        ],
+                                      ),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          child: Text('ปิด'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: checkpointColor,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  border: Border.all(
+                                    color: checkpointColor,
+                                    width: 2.0,
                                   ),
-                                  SizedBox(width: 8),
-                                  BigText(
-                                    text: "ตรวจครบแล้ว",
-                                    size: Dimensions.font22,
-                                    color: AppColors.successColor,
+                                ),
+                                child: Center(
+                                  child: BigText(
+                                    text: '${index + 1}',
+                                    size: Dimensions.font18,
+                                    color: AppColors.blackColor,
                                   ),
-                                ],
-                              )
-                            : SmallText(
-                                text:
-                                    "ตรวจไปแล้ว (${countCheckedPoints}/${totalCheckpoint})",
-                                size: Dimensions.font20,
-                              )
-                        : SmallText(
-                            text: "ไม่พบข้อมูล",
-                            size: Dimensions.font20,
-                          ),
-                SizedBox(height: Dimensions.height10),
+                                ),
+                              ),
+                            ));
+                      },
+                      childCount: totalCheckpoint,
+                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5,
+                      crossAxisSpacing: 8.0,
+                      mainAxisSpacing: 8.0,
+                    ),
+                  ),
+                )
               ],
             ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 5.0),
-            sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  JobSchedule jobSchedule = jobSchedules[index];
-                  Color checkpointColor;
-                  Color hoverColor;
-
-                  if (jobSchedule.jobScheduleStatusId == 3) {
-                    checkpointColor = AppColors.mainColor.withOpacity(0.1);
-                    hoverColor = AppColors.mainColor.withOpacity(0.2);
-                  } 
-                  else if (jobSchedule.jobScheduleStatusId == 1) {
-                    checkpointColor = AppColors.successColor.withOpacity(0.6);
-                    hoverColor = AppColors.successColor.withOpacity(0.8);
-                  } 
-                  else if (jobSchedule.jobScheduleStatusId == 2) {
-                    checkpointColor = AppColors.errorColor.withOpacity(0.6);
-                    hoverColor = AppColors.errorColor.withOpacity(0.8);
-                  } else {
-                    checkpointColor = Colors.grey.withOpacity(0.1);
-                    hoverColor = Colors.grey.withOpacity(0.2); 
-                  }
-
-
-                  return MouseRegion(
-                      onEnter: (_) => setState(() {
-                            checkpointColor = hoverColor;
-                          }),
-                      onExit: (_) => setState(() {
-                            checkpointColor =
-                                jobSchedule.jobScheduleStatusId == 3
-                                    ? AppColors.mainColor.withOpacity(0.1)
-                                    : AppColors.successColor.withOpacity(0.6);
-                          }),
-                      child: GestureDetector(
-                        onTap: () {
-                          _navigateToLocationDetailsPage(
-                            context,
-                            jobSchedule.jobAuthorityId,
-                            jobSchedule.jobScheduleDate,
-                            jobSchedule.jobScheduleShiftId,
-                          );
-                        },
-                        onLongPress: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('รายละเอียด'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SmallText(
-                                      text:
-                                          'พื้นที่: ${jobSchedule.zoneDescription}',
-                                      color: AppColors.greyColor,
-                                      size: Dimensions.font16,
-                                    ),
-                                    SmallText(
-                                      text:
-                                          'จุดตรวจ: ${jobSchedule.locationDescription}',
-                                      color: AppColors.greyColor,
-                                      size: Dimensions.font16,
-                                    ),
-                                    SmallText(
-                                      text:
-                                          'สถานะ: ${jobSchedule.jobScheduleStatusId == 3 ? 'ยังไม่ได้ตรวจสอบ' : 'ตรวจสอบแล้ว'}',
-                                      color:
-                                          jobSchedule.jobScheduleStatusId == 3
-                                              ? AppColors.errorColor
-                                              : AppColors.successColor,
-                                      size: Dimensions.font16,
-                                    )
-                                  ],
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text('ปิด'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: checkpointColor,
-                            borderRadius: BorderRadius.circular(8.0),
-                            border: Border.all(
-                              color: checkpointColor,
-                              width: 2.0,
-                            ),
-                          ),
-                          child: Center(
-                            child: BigText(
-                              text: '${index + 1}',
-                              size: Dimensions.font18,
-                              color: AppColors.blackColor,
-                            ),
-                          ),
-                        ),
-                      ));
-                },
-                childCount: totalCheckpoint,
-              ),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
-              ),
-            ),
-          )
-        ],
-      ),
       bottomNavigationBar: BottomNavbar(
-      currentIndex: _currentIndex,
+        currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
       ),
     );
