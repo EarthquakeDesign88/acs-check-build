@@ -478,12 +478,6 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                               color: AppColors.mainColor,
                             ),
                             SizedBox(height: Dimensions.height10),
-                            SmallText(
-                              text: "QR: ${locationQR}",
-                              size: Dimensions.font20,
-                              color: AppColors.mainColor,
-                            ),
-                            SizedBox(height: Dimensions.height10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: jobStatuses.map((status) {

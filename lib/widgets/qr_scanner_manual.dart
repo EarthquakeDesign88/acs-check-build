@@ -49,8 +49,19 @@ class _QRScannerState extends State<QRScanner> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
+                if (result != null)
+                  BigText(
+                    text: 'รหัสคิวอาร์โค้ด: ${result!.code}',
+                    size: Dimensions.font20 
+                  )
+                else
                     SizedBox(height: Dimensions.height5),
-                    BigText(text: 'สแกนจุดตรวจ', size: Dimensions.font18),
+                    Visibility(
+                      visible: result == null,
+                      child: BigText(text: 'สแกนจุดตรวจ', size: Dimensions.font20)
+                    ),
+                    SizedBox(height: Dimensions.height5),
+                    BigText(text: 'สแกนจุดตรวจ', size: Dimensions.font20),
                     Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -64,7 +75,7 @@ class _QRScannerState extends State<QRScanner> {
                           },
                           child: SmallText(
                             text: isFlashOn == true ? "แฟลช: เปิด" : "แฟลช: ปิด",
-                            size: Dimensions.font18, 
+                            size: Dimensions.font20, 
                             color: AppColors.darkGreyColor
                           ),
                         ),
@@ -84,6 +95,26 @@ class _QRScannerState extends State<QRScanner> {
                         ),
                        )
                     ],
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (result != null) {
+                        Navigator.pop(context, result!.code);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('กรุณาสแกนคิวอาร์โค้ดก่อน'), backgroundColor: AppColors.errorColor),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mainColor,
+                      elevation: 3,
+                      padding: const EdgeInsets.all(8.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: BigText(text: 'ยืนยันจุดตรวจ', color: AppColors.whiteColor, size: Dimensions.font18)
                   ),
                   SizedBox(height: Dimensions.height5)
                 ],
@@ -115,29 +146,15 @@ class _QRScannerState extends State<QRScanner> {
   }
 
   void _onQRViewCreated(QRViewController controller) {
-    this.controller = controller;
-
     setState(() {
-      result = null;
+      this.controller = controller;
     });
-
     controller.scannedDataStream.listen((scanData) {
-      if (scanData != null) {
-        // Avoid multiple triggers by checking if the result is already set
-        if (result == null) {
-          setState(() {
-            result = scanData;
-          });
-
-          // Only navigate if the scanned result is valid
-          if (result!.code != null) {
-            Navigator.pop(context, result!.code);
-          }
-        }
-      }
+      setState(() {
+        result = scanData;
+      });
     });
   }
-
 
   void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
     log('${DateTime.now().toIso8601String()}_onPermissionSet $p');
