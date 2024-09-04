@@ -16,6 +16,3 @@ workflows:
       - build/ios/iphoneos/Runner.app
       - build/ios/iphoneos/Runner.app.dSYM
       - build/ios/ipa/*.ipa
-    cache:
-      directories:
-        - build
