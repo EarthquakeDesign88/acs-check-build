@@ -1,24 +1,21 @@
 workflows:
-    sample-workflow:
-        name: Codemagic Sample Workflow
-        max_build_duration: 120
-        instance_type: mac_mini_m1
-
-    ios-native:
-      environment:
-        vars:
-          BUNDLE_ID: "io.codemagic.sample.iosnative"
-          XCODE_WORKSPACE: "CodemagicSample.xcworkspace" # <-- Name of your Xcode workspace
-          XCODE_SCHEME: "CodemagicSample" # <-- Name of your Xcode scheme
+  build:
+    name: Build iOS App
+    max_build_duration: 120
+    instance_type: mac_mini_m1
     scripts:
-      # ...
-      - name: Build ipa for distribution
-        script: | 
-          xcode-project build-ipa \
-            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+      - name: Install dependencies
+        script: |
+          flutter pub get
+          cd ios
+          pod install
+      - name: Build iOS app
+        script: |
+          flutter build ios --release --no-codesign
     artifacts:
+      - build/ios/iphoneos/Runner.app
+      - build/ios/iphoneos/Runner.app.dSYM
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    cache:
+      directories:
+        - build
