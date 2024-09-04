@@ -13,6 +13,7 @@ import 'package:acs_check/services/work_shift_service.dart';
 import 'package:acs_check/models/work_shift_model.dart';
 import 'package:intl/intl.dart';
 import 'package:acs_check/utils/app_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HistoryJobPage extends StatefulWidget {
   const HistoryJobPage({Key? key}) : super(key: key);
@@ -38,16 +39,13 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
   List<JobSchedule> jobSchedules = [];
   List<WorkShift> workShifts = [];
   List<Map<String, dynamic>> statuses = [];
-  List<Map<String, dynamic>> images = [];
+  
+  Map<int, List<Map<String, dynamic>>> imagesMap = {};
 
   DateTime? _selectedDate;
   String? _selectedShift;
   String? _selectedStatus;
   int? selectedJobScheduleId;
-
-  Widget _buildLoading() {
-    return CircularProgressIndicator();
-  }
 
   @override
   void initState() {
@@ -136,7 +134,7 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
       setState(() {
         isLoading = false;
       });
-      print('Some required parameters are null');
+      // print('Some required parameters are null');
     }
   }
 
@@ -151,8 +149,55 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
         await jobScheduleService.fetchImagesJob(jobScheduleId);
 
     setState(() {
-      images = List<Map<String, dynamic>>.from(fetchedImages ?? []);
+      imagesMap[jobScheduleId] = List<Map<String, dynamic>>.from(fetchedImages ?? []);
     });
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: BigText(text: "รูปภาพปัญหา", size:  Dimensions.font24),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                if (imagesMap[jobScheduleId]!.isNotEmpty)
+                  ...imagesMap[jobScheduleId]!.map((image) {
+                    String imagePath = image['image_path'];
+                    if (!imagePath.startsWith('http')) {
+                      imagePath = '${AppConstants.baseUrl}/storage/$imagePath';
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: CachedNetworkImage(
+                        imageUrl: imagePath,
+                        placeholder: (context, url) => CircularProgressIndicator(),
+                        errorWidget: (context, url, error) {
+                          return Icon(Icons.error);
+                        },
+                      ),
+                    );
+                  }).toList()
+                else
+                  SmallText(
+                    text: "ไม่มีรูปภาพ",
+                    size: Dimensions.font16,
+                    color: AppColors.greyColor,
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: SmallText(text: "ปิด", color: AppColors.mainColor),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -166,18 +211,26 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
           backgroundColor: AppColors.mainColor,
           iconTheme: IconThemeData(color: AppColors.whiteColor)),
       drawer: _buildDrawer(),
-      body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              _buildSearchFilters(context),
-              const SizedBox(height: 16),
-              isLoading
-                  ? CircularProgressIndicator()
-                  : Expanded(child: _buildJobSchedulesList()),
-            ],
-          )),
-     bottomNavigationBar: BottomNavbar(
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildSearchFilters(context),
+                SizedBox(height: Dimensions.height15),
+                 Expanded(
+                  child: isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : jobSchedules.isEmpty
+                          ? Center(child: BigText(text: "ไม่พบข้อมูล", size: Dimensions.font20, color: AppColors.greyColor))
+                          : _buildJobSchedulesList()),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavbar(
         currentIndex: _currentIndex,
         onTabChanged: _onTabChanged,
       ),
@@ -249,7 +302,7 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
           children: [
             Expanded(
               child: TextFormField(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: "เลือกวันที่ตรวจสอบ",
                   border: OutlineInputBorder(),
                 ),
@@ -260,6 +313,7 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
                     initialDate: DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2101),
+                    locale: const Locale('th', 'TH'),
                   );
 
                   if (pickedDate != null) {
@@ -278,16 +332,22 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
             const SizedBox(width: 16),
             Expanded(
               child: DropdownButtonFormField<String>(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: "เลือกช่วงเวลา",
                   border: OutlineInputBorder(),
                 ),
-                items: workShifts.map((WorkShift shift) {
-                  return DropdownMenuItem<String>(
-                    value: shift.workShiftId.toString(),
-                    child: Text(shift.shiftTimeSlot),
-                  );
-                }).toList(),
+                items: [
+                    const DropdownMenuItem<String>(
+                    value: null,
+                    child: Text("ทุกช่วงเวลา"),
+                  ),
+                  ...workShifts.map((WorkShift shift) {
+                    return DropdownMenuItem<String>(
+                      value: shift.workShiftId.toString(),
+                      child: Text(shift.shiftTimeSlot),
+                    );
+                  }).toList(),
+                ],
                 onChanged: (newValue) {
                   setState(() {
                     _selectedShift = newValue;
@@ -334,15 +394,23 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
     );
   }
 
-  Widget _buildJobSchedulesList() {
+   Widget _buildJobSchedulesList() {
     return ListView.builder(
       itemCount: jobSchedules.length,
       itemBuilder: (context, index) {
-        JobSchedule jobSchedule = jobSchedules[index];
+        final jobSchedule = jobSchedules[index];
+        final statusDescription = statuses.firstWhere(
+                (status) => status['job_status_id'] == jobSchedule.jobScheduleStatusId.toString(),
+                orElse: () => {'job_status_description': 'Unknown'})
+            ['job_status_description'];
 
-        return ListTile(
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          elevation: 5,
+          child: ListTile(
             title: BigText(
-              text: "จุดตรวจ: ${jobSchedule.locationDescription}",
+              text:
+                  "จุดตรวจ: ${jobSchedule.zoneDescription}_${jobSchedule.locationDescription}",
               size: Dimensions.font18,
             ),
             subtitle: Column(
@@ -351,79 +419,41 @@ class _HistoryJobPageState extends State<HistoryJobPage> {
                 SmallText(
                     text: "พื้นที่: ${jobSchedule.zoneDescription}",
                     color: AppColors.greyColor,
-                    size: Dimensions.font16),
+                    size: Dimensions.font14),
+                SizedBox(height: Dimensions.height5),
+                SmallText(
+                    text: "${jobSchedule.workShiftDescription}",
+                    color: AppColors.greyColor,
+                    size: Dimensions.font14),
+                SizedBox(height: Dimensions.height5),
+                SmallText(
+                    text: "ช่วงเวลา: ${jobSchedule.shiftTimeSlot}",
+                    color: AppColors.greyColor,
+                    size: Dimensions.font14),
                 SizedBox(height: Dimensions.height5),
                 SmallText(
                     text: "สถานะ: ${jobSchedule.jobStatusDescription}",
                     color: AppColors.greyColor,
-                    size: Dimensions.font16),
+                    size: Dimensions.font14),
                 SizedBox(height: Dimensions.height5),
                 if (jobSchedule.jobScheduleStatusId != 3)
                   SmallText(
-                      text: "ตรวจสอบเวลา: ${jobSchedule.inspectionCompletedAt}",
+                      text:
+                          "ตรวจสอบเวลา: ${jobSchedule.inspectionCompletedAt}",
                       color: AppColors.greyColor,
-                      size: Dimensions.font16),
-                if (jobSchedule.jobScheduleStatusId == 2) ...[
-                  SizedBox(height: Dimensions.height10),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (selectedJobScheduleId == jobSchedule.jobScheduleId) {
-                        setState(() {
-                          selectedJobScheduleId = null;
-                        });
-                      } else {
-                        setState(() {
-                          selectedJobScheduleId = jobSchedule.jobScheduleId;
-                        });
-
-                        await _fetchImagesAndShowDialog(selectedJobScheduleId!);
-                      }
+                      size: Dimensions.font14
+                  )
+              ]),    
+            trailing: jobSchedule.jobScheduleStatusId == 2
+                ? IconButton(
+                    icon: Icon(Icons.image),
+                   onPressed: () async {
+                      await _fetchImagesAndShowDialog(jobSchedule.jobScheduleId);
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mainColor,
-                      elevation: 3,
-                      padding: const EdgeInsets.all(10.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    child: SmallText(
-                      text: selectedJobScheduleId == jobSchedule.jobScheduleId
-                          ? "ปิด"
-                          : "ดูรูปภาพปัญหา",
-                      size: Dimensions.font16,
-                      color: AppColors.whiteColor,
-                    ),
-                  ),
-                  SizedBox(height: Dimensions.height5),
-                ],
-                Visibility(
-                  visible: selectedJobScheduleId == jobSchedule.jobScheduleId,
-                  child: Column(
-                    children: [
-                      if (images.isNotEmpty)
-                        ...images.map((image) {
-                          String imagePath = image['image_path'];
-                          if (!imagePath.startsWith('http')) {
-                            imagePath =
-                                '${AppConstants.baseUrl}/storage/$imagePath';
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Image.network(imagePath),
-                          );
-                        }).toList()
-                      else
-                        SmallText(
-                          text: "ไม่มีรูปภาพ",
-                          size: Dimensions.font16,
-                          color: AppColors.greyColor,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ));
+                  )
+                : null,
+          ),
+        );
       },
     );
   }

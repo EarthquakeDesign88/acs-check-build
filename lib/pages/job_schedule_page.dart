@@ -31,6 +31,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   int _currentIndex = 0;
 
   String scannedCode = '';
+  String zoneDescription = '';
   String locationDescription = '';
   String locationQR = '';
 
@@ -40,6 +41,7 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
 
   bool isLoading = false;
   bool isJobSchedulesLoading = false;
+  bool isSubmitting = false;
 
   List<JobSchedule> jobSchedules = [];
   List<Map<String, dynamic>> jobStatuses = [];
@@ -50,10 +52,6 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
   int? selectedJobStatusId;
 
   List<XFile>? _images = [];
-
-  Widget _buildLoading() {
-    return CircularProgressIndicator();
-  }
 
   @override
   void initState() {
@@ -221,13 +219,11 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
     );
   }
 
-  Future<void> _onConfirmInspection() async {
+  Future<void> _confirmInspectionResult() async {
     final arguments = Get.arguments as Map<String, dynamic>;
     final int userId = arguments['userId'];
     final String jobScheduleDate = arguments['jobScheduleDate'];
     final int jobScheduleShiftId = arguments['jobScheduleShiftId'];
-
-    bool saveSuccess = true;
 
     if (selectedJobStatusId == 2 && (_images == null || _images!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -236,6 +232,9 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
           backgroundColor: AppColors.errorColor,
         ),
       );
+      setState(() {
+        isSubmitting = false;
+      });
       return;
     }
 
@@ -246,6 +245,9 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
           backgroundColor: AppColors.errorColor,
         ),
       );
+      setState(() {
+        isSubmitting = false;
+      });
       return;
     }
 
@@ -268,7 +270,6 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
         );
 
         setState(() {
-          saveSuccess = true;
           scannedCode = '';
           selectedJobStatusId = null;
           _images = [];
@@ -281,41 +282,54 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
               content: Text(response['message']),
               backgroundColor: AppColors.errorColor),
         );
+        setState(() {
+          isSubmitting = false;
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('พบข้อผิดพลาด โปรดลองใหม่อีกครั้งภายหลัง'),
           backgroundColor: AppColors.errorColor));
+      setState(() {
+        isSubmitting = false;
+      });
+    } finally {
+      setState(() {
+        isSubmitting = false;
+      });
     }
   }
 
   Future<void> _loadLocationDescription(String scannedCode) async {
     setState(() {
-      isLoading = true; 
+      isLoading = true;
     });
 
     try {
       final location = await locationService.checkLocation(scannedCode);
-      
-    if (location != null) {
-      setState(() {
-        locationDescription = location.locationDescription;
-        locationQR = location.locationQR;
-      });
-    } else {
+
+      if (location != null) {
+        setState(() {
+          locationDescription = location.locationDescription;
+          zoneDescription = location.zoneDescription;
+          locationQR = location.locationQR;
+        });
+      } else {
         setState(() {
           locationDescription = 'ไม่พบข้อมูล';
+          zoneDescription = 'ไม่พบข้อมูล';
           locationQR = 'ไม่พบข้อมูล';
         });
       }
     } catch (e) {
       setState(() {
         locationDescription = 'พบข้อผิดพลาด';
+        zoneDescription = 'ไม่พบข้อมูล';
         locationQR = 'ไม่พบข้อมูล';
       });
     } finally {
       setState(() {
-        isLoading = false; 
+        isLoading = false;
       });
     }
   }
@@ -473,7 +487,8 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                         child: Column(
                           children: [
                             SmallText(
-                              text: "จุดตรวจ: ${locationDescription}",
+                              text:
+                                  "จุดตรวจ: ${zoneDescription}_${locationDescription}",
                               size: Dimensions.font20,
                               color: AppColors.mainColor,
                             ),
@@ -541,8 +556,18 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                             SizedBox(height: Dimensions.height20),
                             Visibility(
                               visible: selectedJobStatusId != null,
-                              child: ElevatedButton(
-                                onPressed: () => _onConfirmInspection(),
+                              child: isSubmitting ? const CircularProgressIndicator() : ElevatedButton(
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () async {
+                                        if (isSubmitting) return;
+
+                                        setState(() {
+                                          isSubmitting = true;
+                                        });
+
+                                        await _confirmInspectionResult();
+                                      },
                                 style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.mainColor,
                                     elevation: 3,
@@ -573,21 +598,8 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                       ),
                                       itemCount: _images!.length,
                                       itemBuilder: (context, index) {
-                                        return Stack(
-                                          children: [
-                                            Wrap(
-                                              children: _images!
-                                                  .asMap()
-                                                  .entries
-                                                  .map((entry) {
-                                                int index = entry.key;
-                                                XFile imageFile = entry.value;
-                                                return _buildImagePreview(
-                                                    imageFile, index);
-                                              }).toList(),
-                                            ),
-                                          ],
-                                        );
+                                        return _buildImagePreview(
+                                            _images![index], index);
                                       },
                                       shrinkWrap: true,
                                       physics:
@@ -627,10 +639,11 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                           "ตรวจไปแล้ว (${countCheckedPoints}/${totalCheckpoint})",
                                       size: Dimensions.font20,
                                     )
-                              : SmallText(
-                                  text: "ไม่พบข้อมูล",
-                                  size: Dimensions.font20,
-                                ),
+                              : Center(
+                                  child: BigText(
+                                      text: "ไม่พบข้อมูล",
+                                      size: Dimensions.font20,
+                                      color: AppColors.greyColor)),
                       SizedBox(height: Dimensions.height10),
                     ],
                   ),
@@ -643,19 +656,22 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                         JobSchedule jobSchedule = jobSchedules[index];
                         Color checkpointColor;
                         Color hoverColor;
+                        Color? statusColor;
 
                         if (jobSchedule.jobScheduleStatusId == 3) {
-                          checkpointColor =
-                              AppColors.mainColor.withOpacity(0.1);
+                          checkpointColor =AppColors.mainColor.withOpacity(0.1);
                           hoverColor = AppColors.mainColor.withOpacity(0.2);
-                        } else if (jobSchedule.jobScheduleStatusId == 1) {
-                          checkpointColor =
-                              AppColors.successColor.withOpacity(0.6);
+                          statusColor = AppColors.darkGreyColor;
+                        } 
+                        else if (jobSchedule.jobScheduleStatusId == 1) {
+                          checkpointColor = AppColors.successColor.withOpacity(0.6);
                           hoverColor = AppColors.successColor.withOpacity(0.8);
-                        } else if (jobSchedule.jobScheduleStatusId == 2) {
-                          checkpointColor =
-                              AppColors.errorColor.withOpacity(0.6);
+                          statusColor = AppColors.successColor;
+                        } 
+                        else if (jobSchedule.jobScheduleStatusId == 2) {
+                          checkpointColor =AppColors.errorColor.withOpacity(0.6);
                           hoverColor = AppColors.errorColor.withOpacity(0.8);
+                          statusColor = AppColors.errorColor;
                         } else {
                           checkpointColor = Colors.grey.withOpacity(0.1);
                           hoverColor = Colors.grey.withOpacity(0.2);
@@ -700,18 +716,14 @@ class _JobSchedulePageState extends State<JobSchedulePage> {
                                           ),
                                           SmallText(
                                             text:
-                                                'จุดตรวจ: ${jobSchedule.locationDescription}',
+                                                'จุดตรวจ: ${jobSchedule.zoneDescription}_${jobSchedule.locationDescription}',
                                             color: AppColors.greyColor,
                                             size: Dimensions.font16,
                                           ),
                                           SmallText(
                                             text:
-                                                'สถานะ: ${jobSchedule.jobScheduleStatusId == 3 ? 'ยังไม่ได้ตรวจสอบ' : 'ตรวจสอบแล้ว'}',
-                                            color: jobSchedule
-                                                        .jobScheduleStatusId ==
-                                                    3
-                                                ? AppColors.errorColor
-                                                : AppColors.successColor,
+                                                'สถานะ: ${jobSchedule.jobStatusDescription}',
+                                            color: statusColor,
                                             size: Dimensions.font16,
                                           )
                                         ],

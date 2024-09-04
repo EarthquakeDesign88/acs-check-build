@@ -11,6 +11,7 @@ import 'package:acs_check/models/work_shift_model.dart';
 import 'package:acs_check/services/work_shift_service.dart';
 import 'package:acs_check/services/job_schedule_service.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 
 class WorkShiftPage extends StatefulWidget {
   const WorkShiftPage({Key? key}) : super(key: key);
@@ -37,10 +38,25 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
   List<WorkShift>? workShifts;
   String? jobScheduleDate;
 
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(hours: 1), (timer) {
+      _fetchWorkShifts();
+    });
   }
 
   void _loadUserData() async {
@@ -60,7 +76,6 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
     if (userId != null) {
       final currentDate = DateTime.now();
       final formattedDate = currentDate.toIso8601String().split('T')[0];
-      // print(formattedDate);
       final shifts = await workShiftService.fetchWorkShiftsByUser(userId!, formattedDate);
 
       setState(() {
@@ -263,10 +278,6 @@ class _WorkShiftPageState extends State<WorkShiftPage> {
         onTabChanged: _onTabChanged,
       ),
     );
-  }
-
-  Widget _buildLoading() {
-    return CircularProgressIndicator();
   }
 
   Widget _buildTimeSlotTile(BuildContext context, String timeSlot, int shiftId) {

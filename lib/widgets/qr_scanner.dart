@@ -123,13 +123,11 @@ class _QRScannerState extends State<QRScanner> {
 
     controller.scannedDataStream.listen((scanData) {
       if (scanData != null) {
-        // Avoid multiple triggers by checking if the result is already set
         if (result == null) {
           setState(() {
             result = scanData;
           });
 
-          // Only navigate if the scanned result is valid
           if (result!.code != null) {
             Navigator.pop(context, result!.code);
           }

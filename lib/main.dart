@@ -5,6 +5,7 @@ import 'package:acs_check/services/auth_service.dart';
 import 'package:acs_check/utils/constants.dart';
 import 'package:get/get.dart';
 import 'package:acs_check/routes/route_helper.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   runApp(MyApp());
@@ -23,6 +24,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: AppColors.mainColor,
       ),
+      supportedLocales: [
+        Locale('en', 'US'),
+        Locale('th', 'TH'),
+      ],
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: FutureBuilder<bool>(
         future: authService.isLoggedIn(),
         builder: (context, snapshot) {

@@ -2,9 +2,11 @@
     
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="acs_check"
+        android:label="ACS Check"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
+    >
         <activity
             android:name=".MainActivity"
             android:exported="true"

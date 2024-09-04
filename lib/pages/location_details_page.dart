@@ -184,7 +184,20 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
               itemCount: locationDetails.length,
               itemBuilder: (context, index) {
                 final location = locationDetails[index];
-                return _buildLocationCard(location);
+                final jobStatusId = location.jobStatusId ?? 0;
+
+                Color? statusColor;
+
+                if (jobStatusId == 3) {
+                  statusColor = AppColors.darkGreyColor;
+                } else if (jobStatusId == 1) {
+                  statusColor = AppColors.successColor;
+                } else if (jobStatusId == 2) {
+                  statusColor = AppColors.errorColor;
+                } else {
+                  statusColor = AppColors.greyColor;
+                }
+                return _buildLocationCard(location, statusColor);
               },
             ),
       bottomNavigationBar: BottomNavbar(
@@ -194,7 +207,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
     );
   }
 
-  Widget _buildLocationCard(Location location) {
+  Widget _buildLocationCard(Location location, Color statusColor) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: Dimensions.height10),
       padding: EdgeInsets.all(16.0),
@@ -224,19 +237,9 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
           ),
           _buildDetailRow(
             'สถานะ:',
-            location.jobStatusId != 3 ? "ตรวจสอบแล้ว" : "ยังไม่ได้ตรวจสอบ",
-            location.jobStatusId != 3
-                ? AppColors.greyColor
-                : AppColors.errorColor,
+            location.jobStatusDescription,
+            statusColor,
           ),
-          if (location.jobStatusId != 3)
-            _buildDetailRow(
-              'รายละเอียดสถานะ:',
-              location.jobStatusDescription,
-              location.jobStatusId == 1
-                  ? AppColors.successColor
-                  : AppColors.errorColor,
-            ),
           _buildDetailRow(
             'ตรวจสอบเวลา:',
             location.inspectionCompletedAt,
@@ -274,9 +277,9 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                 if (images.isNotEmpty)
                   ...images.map((image) {
                     String imagePath = image['image_path'];
-                    if (!imagePath.startsWith('http')) {
-                      imagePath = '${AppConstants.baseUrl}/storage/$imagePath';
-                    } 
+
+                    imagePath = '${AppConstants.baseUrl}/storage/$imagePath';
+
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Image.network(
