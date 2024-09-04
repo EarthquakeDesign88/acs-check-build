@@ -13,6 +13,9 @@ workflows:
       - name: Install pods
         script: | 
           find . -name "Podfile" -execdir pod install \;
+      - name: Clean build
+        script: |
+          flutter clean
       - name: Flutter build ipa
         script: | 
           flutter build ipa --release \
