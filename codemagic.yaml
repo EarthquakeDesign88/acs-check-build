@@ -7,8 +7,11 @@ workflows:
       flutter: stable
 
     scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
       - name: Build for iOS
         script: flutter build ipa --release
+
 
     artifacts:
       - build/ios/ipa/*.ipa
