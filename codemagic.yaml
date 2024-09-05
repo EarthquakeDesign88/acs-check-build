@@ -2,7 +2,7 @@ workflows:
   acs-check:
     name: ACS Check Build
     max_build_duration: 120
-    instance_type: mac_pro
+    instance_type: mac_mini_m1  
     environment:
       flutter: stable
 
